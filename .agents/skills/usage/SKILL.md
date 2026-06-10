@@ -70,6 +70,21 @@ src/features/claudeUsage/provider.ts · codexUsage/provider.ts   # 얇은 provid
 4. 프론트: `features/<provider>Usage/provider.ts` 에 디스크립터(제목·커맨드·저장키)만 만들어 `App` 에 패널 추가.
 5. 공유 모델/캐시/훅/카드는 수정하지 않는다(OCP).
 
+## UI 및 비주얼 경고 정책
+
+한도바는 사용자가 한도 도달 전에 대처할 수 있도록 두 단계의 시각적 경고(주의/경고)와 팝업 메시지를 제공한다.
+
+### 1. 비주얼 진행도 (주의 / 경고)
+잔여 사용량(`remaining`)에 따라 카드 및 프로그레스 바의 테두리와 수치 색상이 변화한다:
+- **경고 (Danger, 20% 이하)**: 빨간색 계열(`.remaining.danger`, `.bar-fill.danger`, `#c0392b`).
+- **주의 (Warning, 50% 이하 20% 초과)**: 주황색 계열(`.remaining.warning`, `.bar-fill.warning`, `#d35400`/`#e67e22`).
+- **정상 (Normal, 50% 초과)**: 기본 보라색 계열(`#6b4eff`).
+
+### 2. 세션별 경고 배너
+- **5시간 세션 경고**: `five_hour` 윈도우의 잔여 사용량이 20% 이하로 떨어지면 패널 상단에 **"fast mode를 꺼주세요"** 라는 경고 배너(`.fast-mode-warning`)를 노출한다.
+- **닫기 기능**: 배너 우측의 `×` 버튼을 눌러 개별 배너를 닫을(dismiss) 수 있다.
+- **상태 복원**: 사용량이 다시 20%를 초과하게 갱신되면 닫힘(dismissed) 상태가 초기화되어, 나중에 다시 20% 이하로 진입 시 배너가 정상적으로 다시 표시된다.
+
 ## 유닛 테스트
 
 ### 백엔드 (Rust) — `cargo test`

@@ -117,7 +117,9 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 프론트에서 1~10분(저장 키 provider별 분리). 응답의 `fetched_at` 은 KST `YYYY-MM-DDThh:mm:ss`(타임존 표기 제외)로
 표시하고, 리셋 시각은 상대 시간과 정확한 KST 시각을 함께 보여준다. 트레이 라벨은 `src-tauri/src/labels.rs`.
 
-> 엔드포인트·인증·소스·폴링/rate limit·provider 추가 절차의 **단일 출처는
+비주얼 경고 정책으로, 50% 이하 20% 초과 잔여 사용량 시 주황색(`.warning`), 20% 이하일 때 빨간색(`.danger`)으로 표시하여 직관적인 피드백을 주며, 5시간 세션 잔여 사용량이 20% 이하일 때 "fast mode를 꺼주세요" 경고 배너를 띄우고 닫을 수 있게 지원한다.
+
+> 엔드포인트·인증·소스·폴링/rate limit·경고 정책·provider 추가 절차의 **단일 출처는
 > [`usage` 스킬](.agents/skills/usage/SKILL.md)** 이다.
 
 ### macOS 코드 서명 (키체인 "항상 허용" 유지)
