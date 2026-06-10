@@ -117,6 +117,10 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 반복적이고 결정론적인 워크플로는 `.agents/skills/<skill-name>/` 에 **스킬**로 분리해
 에이전트가 일관되게 수행하도록 한다. 스킬 작성·개선·평가는 `skill-creator` 스킬을 기준으로 삼는다.
 
+> Claude Code가 자동 인식하도록 각 프로젝트 스킬은 `.claude/skills/<name>` →
+> `.agents/skills/<name>` 상대 심볼릭 링크로 노출한다. 새 스킬을 추가하면 링크도 함께 만든다:
+> `ln -sf ../../.agents/skills/<name> .claude/skills/<name>`
+
 > `skill-creator` 는 `anthropics/skills` 에서 가져온 **서드파티 vendored 스킬**로,
 > `skills-lock.json` 으로 버전이 관리되며 **저장소에는 커밋하지 않는다**(`.gitignore`).
 > 클론 후 스킬 설치 도구로 재설치하면 `.agents/skills/skill-creator/` 에 복원된다.
