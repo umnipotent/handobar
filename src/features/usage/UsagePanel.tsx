@@ -1,10 +1,12 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useState } from "react";
 import { USAGE_COPY } from "./copy";
 import { formatKstIsoWithoutTimezone } from "./format";
 import type { UsageGateway } from "./gateway";
 import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
 import { AlertBanner } from "./AlertBanner";
+import type { UsageWindow } from "./types";
 import "./UsagePanel.css";
 
 export interface UsageProvider {
@@ -13,6 +15,18 @@ export interface UsageProvider {
   gateway: UsageGateway;
   storageKey: string;
   webUrl?: string;
+}
+
+/** usage가 있는데 윈도우가 null이면 0% 고갈로 처리한다. */
+function resolveWindow(
+  window: UsageWindow | null | undefined,
+  hasUsage: boolean,
+): UsageWindow | null {
+  if (window != null) return window;
+  // usage 자체가 없으면(로딩 전) null 그대로 유지
+  if (!hasUsage) return null;
+  // usage는 있는데 윈도우가 없으면 → 완전 고갈(0%)
+  return { remaining: 0, used: 100, resets_at: "" };
 }
 
 function DragHandleIcon() {
@@ -54,6 +68,7 @@ function RefreshIcon({ className }: { className?: string }) {
   );
 }
 
+
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
 export function UsagePanel({
   title,
@@ -81,6 +96,12 @@ export function UsagePanel({
     dismissSubModelWarning,
     dismissError,
   } = useUsage(gateway, storageKey);
+
+  const [sevenDayCollapsed, setSevenDayCollapsed] = useState(false);
+
+  const hasUsage = usage != null;
+  const fiveHourData = resolveWindow(usage?.five_hour, hasUsage);
+  const sevenDayData = resolveWindow(usage?.seven_day, hasUsage);
 
   const handleOpenUrl = async (url: string) => {
     try {
@@ -172,14 +193,19 @@ export function UsagePanel({
       <WindowCard
         title={USAGE_COPY.windows.fiveHour.title}
         hint={USAGE_COPY.windows.fiveHour.hint}
-        data={usage?.five_hour ?? null}
+        data={fiveHourData}
         skeleton={showingManualRefreshSkeleton}
       />
+
+      {/* 주간 카드: 헤더 클릭으로 접기/펼치기 */}
       <WindowCard
         title={USAGE_COPY.windows.sevenDay.title}
         hint={USAGE_COPY.windows.sevenDay.hint}
-        data={usage?.seven_day ?? null}
+        data={sevenDayData}
         skeleton={showingManualRefreshSkeleton}
+        collapsible
+        collapsed={sevenDayCollapsed}
+        onToggleCollapse={() => setSevenDayCollapsed((v) => !v)}
       />
 
       <div className="controls">

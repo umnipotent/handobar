@@ -18,6 +18,54 @@
   justify-content: space-between;
 }
 
+/* 접기 버튼 모드: button reset + 클릭 영역 */
+.card-head-btn {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-radius: calc(var(--radius-lg) - 2px);
+  transition: background 0.12s ease;
+  margin: -4px;
+  padding: 4px;
+}
+
+.card-head-btn:hover {
+  background: color-mix(in srgb, var(--color-text-muted) 6%, transparent);
+}
+
+.card-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chevron-icon {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chevron-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+.card-collapsed {
+  margin-bottom: 8px;
+}
+
+.card-collapsed .card-head-btn {
+  /* 접힌 상태에서는 하단 여백만 살짝 줄임 */
+}
+
 .title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
