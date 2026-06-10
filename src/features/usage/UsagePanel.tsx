@@ -5,6 +5,8 @@ import type { UsageGateway } from "./gateway";
 import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
 import { AlertBanner } from "./AlertBanner";
+import "./UsagePanel.css";
+
 
 export interface UsageProvider {
   id: string;

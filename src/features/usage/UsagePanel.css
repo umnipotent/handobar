@@ -1,0 +1,162 @@
+.panel {
+  height: 100%;
+}
+
+.panel + .panel {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.header-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.header-title-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c0c5;
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.drag-handle:hover {
+  background: #f1f1f4;
+  color: #666;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 800;
+}
+
+.badge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b4eff;
+  background: #efeaff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 500;
+}
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge.model-badge {
+  color: #555;
+  background: #eef0f2;
+  text-transform: none;
+}
+
+.last-refresh {
+  margin: -6px 0 12px;
+  font-size: 11px;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.last-refresh time {
+  color: #444;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.controls label {
+  font-size: 13px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+select {
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 13px;
+  font-family: 'Pretendard', sans-serif;
+}
+
+button {
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+}
+
+button:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.meta-link-btn {
+  background: #efeaff;
+  border: 1px solid #dcd3ff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #6b4eff;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  line-height: 1.2;
+  font-family: 'Paperlogy', sans-serif;
+}
+
+.meta-link-btn:hover {
+  background: #6b4eff;
+  color: #fff;
+  border-color: #6b4eff;
+}

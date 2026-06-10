@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import "./AlertBanner.css";
+
 
 export interface AlertBannerProps {
   message: ReactNode;

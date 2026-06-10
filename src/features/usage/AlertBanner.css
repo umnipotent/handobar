@@ -1,0 +1,47 @@
+.alert-banner {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.alert-banner.danger {
+  color: #8a2a1d;
+  background: #fdecea;
+}
+
+.alert-banner.warning {
+  color: #8a5a00;
+  background: #fff4d6;
+}
+
+.alert-banner-close {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  line-height: 20px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-banner.danger .alert-banner-close:hover {
+  background: rgba(138, 42, 29, 0.12);
+}
+
+.alert-banner.warning .alert-banner-close:hover {
+  background: rgba(138, 90, 0, 0.12);
+}

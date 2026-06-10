@@ -2,6 +2,8 @@ import { USAGE_COPY } from "./copy";
 import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 import { THRESHOLD_DANGER, THRESHOLD_WARNING } from "./config";
+import "./WindowCard.css";
+
 
 interface WindowCardProps {
   title: string;
