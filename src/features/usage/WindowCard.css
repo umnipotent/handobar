@@ -1,9 +1,9 @@
 .card {
-  padding: 16px;
+  padding: 20px;
   border: 1px solid #ddd;
   border-radius: 14px;
   background: white;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .card.empty {
@@ -31,7 +31,7 @@
 }
 
 .remaining {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 30px;
   font-weight: 700;
   font-family: 'Paperlogy', sans-serif;
@@ -50,7 +50,7 @@
 }
 
 .bar {
-  margin-top: 8px;
+  margin-top: 12px;
   height: 7px;
   border-radius: 4px;
   background: #ececef;
@@ -77,7 +77,7 @@
 }
 
 .reset {
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 12px;
   color: var(--color-text-muted);
   opacity: 0.85;
