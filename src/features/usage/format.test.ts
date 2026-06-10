@@ -45,9 +45,7 @@ describe("formatKstIsoWithoutTimezone", () => {
 
 describe("formatResetExactTime", () => {
   it("should return KST reset time label without timezone indicator", () => {
-    expect(formatResetExactTime("2026-06-10T14:00:00Z")).toBe(
-      "리셋 시각 2026-06-10T23:00:00",
-    );
+    expect(formatResetExactTime("2026-06-10T14:00:00Z")).toBe("리셋 시각 2026-06-10T23:00:00");
   });
 
   it("should return empty string for invalid ISO dates", () => {

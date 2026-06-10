@@ -1,36 +1,51 @@
+//! Provider별로 공유하는 사용량 캐시.
+//!
+//! 짧은 간격의 중복 호출(마운트·트레이·타이머 동시)을 합치고, 네트워크 provider의
+//! 429 backoff(`retry_until`) 동안 마지막 값을 stale로 돌려준다. 캐시 상태는
+//! provider마다 독립된 `static` 으로 분리되며(`CLAUDE_CACHE`, `CODEX_CACHE`), 로직은 공유한다.
+//!
+//! Codex처럼 rate limit이 없는 provider는 `remember_retry` 를 호출하지 않을 뿐, 같은 코드를 쓴다(OCP).
+
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use crate::usage::messages;
-use crate::usage::models::ClaudeUsage;
+use crate::usage::model::UsageSnapshot;
 
 const MIN_SPACING: Duration = Duration::from_secs(10);
-const DEFAULT_RETRY_SECS: u64 = crate::usage::api::DEFAULT_RETRY_SECS;
+pub(super) const DEFAULT_RETRY_SECS: u64 = 60;
 
 pub(super) enum FetchDecision {
-    UseCached(ClaudeUsage),
+    UseCached(UsageSnapshot),
     Fetch,
 }
 
-struct Cache {
-    last: Option<ClaudeUsage>,
+pub(super) struct Cache {
+    last: Option<UsageSnapshot>,
     last_success: Option<Instant>,
     retry_until: Option<Instant>,
 }
 
-static CACHE: Mutex<Cache> = Mutex::new(Cache {
-    last: None,
-    last_success: None,
-    retry_until: None,
-});
+impl Cache {
+    const fn new() -> Self {
+        Cache {
+            last: None,
+            last_success: None,
+            retry_until: None,
+        }
+    }
+}
 
-pub(super) fn before_fetch() -> Result<FetchDecision, String> {
-    let cache = CACHE.lock().unwrap();
+pub(super) static CLAUDE_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
+pub(super) static CODEX_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
+
+/// fetch 전 캐시를 검사해 네트워크/파일 접근을 건너뛸 수 있는지 결정한다.
+pub(super) fn before_fetch(cache: &Mutex<Cache>) -> Result<FetchDecision, String> {
+    let cache = cache.lock().unwrap();
 
     if let Some(until) = cache.retry_until {
         if let Some(remaining) = until.checked_duration_since(Instant::now()) {
-            return stale_or_error(&cache, remaining.as_secs().max(1))
-                .map(FetchDecision::UseCached);
+            return stale_or_error(&cache, remaining.as_secs().max(1)).map(FetchDecision::UseCached);
         }
     }
 
@@ -43,21 +58,26 @@ pub(super) fn before_fetch() -> Result<FetchDecision, String> {
     Ok(FetchDecision::Fetch)
 }
 
-pub(super) fn remember_retry(retry_after: u64) -> Result<ClaudeUsage, String> {
+/// 429를 받았을 때 backoff 창을 기록하고, 마지막 값을 stale로 반환한다(네트워크 provider 전용).
+pub(super) fn remember_retry(
+    cache: &Mutex<Cache>,
+    retry_after: u64,
+) -> Result<UsageSnapshot, String> {
     let retry_after = normalize_retry_after(retry_after);
-    let mut cache = CACHE.lock().unwrap();
+    let mut cache = cache.lock().unwrap();
     cache.retry_until = Some(Instant::now() + Duration::from_secs(retry_after));
     stale_or_error(&cache, retry_after)
 }
 
-pub(super) fn remember_success(usage: &ClaudeUsage) {
-    let mut cache = CACHE.lock().unwrap();
+/// 성공 결과를 캐시에 저장한다.
+pub(super) fn remember_success(cache: &Mutex<Cache>, usage: &UsageSnapshot) {
+    let mut cache = cache.lock().unwrap();
     cache.last = Some(usage.clone());
     cache.last_success = Some(Instant::now());
     cache.retry_until = None;
 }
 
-fn stale_or_error(cache: &Cache, retry_after: u64) -> Result<ClaudeUsage, String> {
+fn stale_or_error(cache: &Cache, retry_after: u64) -> Result<UsageSnapshot, String> {
     match &cache.last {
         Some(last) => {
             let mut snapshot = last.clone();
@@ -77,8 +97,8 @@ fn normalize_retry_after(retry_after: u64) -> u64 {
 }
 
 #[cfg(test)]
-fn reset_cache_for_test() {
-    let mut cache = CACHE.lock().unwrap();
+fn reset_cache_for_test(cache: &Mutex<Cache>) {
+    let mut cache = cache.lock().unwrap();
     cache.last = None;
     cache.last_success = None;
     cache.retry_until = None;
@@ -87,10 +107,13 @@ fn reset_cache_for_test() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::usage::models::UsageWindow;
+    use crate::usage::model::UsageWindow;
 
-    fn mock_usage() -> ClaudeUsage {
-        ClaudeUsage {
+    // 테스트 간 상태 격리를 위한 전용 캐시.
+    static TEST_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
+
+    fn mock_usage() -> UsageSnapshot {
+        UsageSnapshot {
             five_hour: Some(UsageWindow {
                 remaining: 50.0,
                 used: 50.0,
@@ -105,18 +128,13 @@ mod tests {
 
     #[test]
     fn test_cache_flow() {
-        // 1. Initial State (Should decide to Fetch)
-        reset_cache_for_test();
-        match before_fetch().unwrap() {
-            FetchDecision::Fetch => {}
-            _ => panic!("Expected Fetch decision in initial state"),
-        }
+        let cache = &TEST_CACHE;
+        reset_cache_for_test(cache);
+        assert!(matches!(before_fetch(cache).unwrap(), FetchDecision::Fetch));
 
-        // 2. Remember Success and Fetch immediately (Should use Cached)
         let usage = mock_usage();
-        remember_success(&usage);
-
-        match before_fetch().unwrap() {
+        remember_success(cache, &usage);
+        match before_fetch(cache).unwrap() {
             FetchDecision::UseCached(cached) => {
                 assert_eq!(cached.fetched_at, usage.fetched_at);
                 assert_eq!(cached.retry_after_secs, None);
@@ -124,20 +142,18 @@ mod tests {
             _ => panic!("Expected Cached decision after success"),
         }
 
-        // 3. 429 Retry Registration
-        reset_cache_for_test();
-        // Calling remember_retry when cache is empty should return an error
-        let res = remember_retry(10);
+        // 빈 캐시에서 429 → 에러
+        reset_cache_for_test(cache);
+        let res = remember_retry(cache, 10);
         assert!(res.is_err());
         assert!(res.unwrap_err().contains("요청이 제한되었습니다"));
 
-        // Calling remember_retry when cache has previous success should return stale data with retry_after_secs
-        remember_success(&usage);
-        let stale = remember_retry(30).unwrap();
+        // 이전 성공이 있으면 stale + retry_after_secs
+        remember_success(cache, &usage);
+        let stale = remember_retry(cache, 30).unwrap();
         assert_eq!(stale.retry_after_secs, Some(30));
 
-        // During retry cooldown, before_fetch should return UseCached with remaining retry_after_secs
-        match before_fetch().unwrap() {
+        match before_fetch(cache).unwrap() {
             FetchDecision::UseCached(cached) => {
                 assert!(cached.retry_after_secs.unwrap() <= 30);
                 assert!(cached.retry_after_secs.unwrap() > 0);
@@ -148,11 +164,10 @@ mod tests {
 
     #[test]
     fn test_zero_retry_after_uses_default_backoff() {
-        reset_cache_for_test();
-        let usage = mock_usage();
-        remember_success(&usage);
-
-        let stale = remember_retry(0).unwrap();
+        let cache = &TEST_CACHE;
+        reset_cache_for_test(cache);
+        remember_success(cache, &mock_usage());
+        let stale = remember_retry(cache, 0).unwrap();
         assert_eq!(stale.retry_after_secs, Some(DEFAULT_RETRY_SECS));
     }
 }

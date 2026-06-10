@@ -1,4 +1,4 @@
-import { CLAUDE_USAGE_COPY } from "./copy";
+import { USAGE_COPY } from "./copy";
 import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 
@@ -27,13 +27,10 @@ export function WindowCard({ title, hint, data, skeleton = false }: WindowCardPr
         <>
           <div className={`remaining ${low ? "low" : ""}`}>
             {remaining}%
-            <span className="remaining-label">{CLAUDE_USAGE_COPY.usage.remainingLabel}</span>
+            <span className="remaining-label">{USAGE_COPY.usage.remainingLabel}</span>
           </div>
           <div className="bar">
-            <div
-              className={`bar-fill ${low ? "low" : ""}`}
-              style={{ width: `${remaining}%` }}
-            />
+            <div className={`bar-fill ${low ? "low" : ""}`} style={{ width: `${remaining}%` }} />
           </div>
           <div className="reset">
             {resetRelative && <span>{resetRelative}</span>}

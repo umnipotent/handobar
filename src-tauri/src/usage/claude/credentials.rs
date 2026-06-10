@@ -1,6 +1,8 @@
+//! Claude Code OAuth 자격증명을 OS 키체인에서 읽는다(인증 게이트웨이).
+
 use serde::Deserialize;
 
-use crate::usage::messages;
+use crate::usage::claude::messages;
 
 const KEYCHAIN_SERVICE: &str = "Claude Code-credentials";
 

@@ -1,5 +1,5 @@
-export const CLAUDE_USAGE_COPY = {
-  appTitle: "Claude Code",
+// provider 공통 화면 문구(한국어). provider별로 다른 것은 제목뿐이라 제목은 패널 prop으로 받는다.
+export const USAGE_COPY = {
   lastRefreshLabel: "마지막 갱신",
   cooldownMessage: (seconds: number) => `요청 제한 중 · ${seconds}초 후 자동 재시도`,
   dismissCooldownLabel: "요청 제한 메시지 닫기",

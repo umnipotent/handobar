@@ -8,11 +8,11 @@ import {
   RETRY_FALLBACK_SECS,
 } from "./config";
 import { loadIntervalMin, saveIntervalMin } from "./storage";
-import { tauriUsageGateway, type UsageGateway } from "./usageGateway";
-import type { ClaudeUsage } from "./types";
+import type { UsageGateway } from "./gateway";
+import type { Usage } from "./types";
 
-interface ClaudeUsageState {
-  usage: ClaudeUsage | null;
+export interface UsageState {
+  usage: Usage | null;
   error: string | null;
   loading: boolean;
   intervalMin: number;
@@ -42,13 +42,12 @@ function normalizeRetryAfterSecs(seconds: number | undefined): number | null {
   return seconds > 0 ? seconds : RETRY_FALLBACK_SECS;
 }
 
-export function useClaudeUsage(
-  gateway: UsageGateway = tauriUsageGateway,
-): ClaudeUsageState {
-  const [usage, setUsage] = useState<ClaudeUsage | null>(null);
+// provider-agnostic 사용량 훅: 게이트웨이(DIP)와 interval 저장 키를 주입받는다.
+export function useUsage(gateway: UsageGateway, storageKey: string): UsageState {
+  const [usage, setUsage] = useState<Usage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [intervalMin, setIntervalMinState] = useState(loadIntervalMin);
+  const [intervalMin, setIntervalMinState] = useState(() => loadIntervalMin(storageKey));
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [cooldownStartedAt, setCooldownStartedAt] = useState(0);
   const [cooldownVisible, setCooldownVisible] = useState(false);
@@ -78,51 +77,54 @@ export function useClaudeUsage(
     setCooldownVisible(false);
   }, []);
 
-  const refresh = useCallback(async (options?: { force?: boolean; manual?: boolean }) => {
-    const manual = options?.manual === true;
-    if (manual) {
-      if (manualSkeletonTimer.current !== null) {
-        window.clearTimeout(manualSkeletonTimer.current);
+  const refresh = useCallback(
+    async (options?: { force?: boolean; manual?: boolean }) => {
+      const manual = options?.manual === true;
+      if (manual) {
+        if (manualSkeletonTimer.current !== null) {
+          window.clearTimeout(manualSkeletonTimer.current);
+        }
+        setShowingManualRefreshSkeleton(true);
+        manualSkeletonTimer.current = window.setTimeout(() => {
+          setShowingManualRefreshSkeleton(false);
+          manualSkeletonTimer.current = null;
+        }, MANUAL_REFRESH_SKELETON_MIN_MS);
       }
-      setShowingManualRefreshSkeleton(true);
-      manualSkeletonTimer.current = window.setTimeout(() => {
-        setShowingManualRefreshSkeleton(false);
-        manualSkeletonTimer.current = null;
-      }, MANUAL_REFRESH_SKELETON_MIN_MS);
-    }
 
-    setLoading(true);
-    let nextSecs = intervalRef.current * 60;
+      setLoading(true);
+      let nextSecs = intervalRef.current * 60;
 
-    try {
-      const nextUsage = await gateway.fetchClaudeUsage({ force: options?.force });
-      setUsage(nextUsage);
+      try {
+        const nextUsage = await gateway.fetchUsage({ force: options?.force });
+        setUsage(nextUsage);
 
-      const retryAfterSecs = normalizeRetryAfterSecs(nextUsage.retry_after_secs);
-      if (retryAfterSecs !== null) {
-        setError(null);
-        startCooldown(retryAfterSecs, manual);
-        nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
-      } else {
-        setError(null);
-        clearCooldown();
+        const retryAfterSecs = normalizeRetryAfterSecs(nextUsage.retry_after_secs);
+        if (retryAfterSecs !== null) {
+          setError(null);
+          startCooldown(retryAfterSecs, manual);
+          nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
+        } else {
+          setError(null);
+          clearCooldown();
+        }
+      } catch (e) {
+        const message = String(e);
+        const retryAfterSecs = retryAfterFromError(message);
+
+        if (retryAfterSecs !== null) {
+          setError(null);
+          startCooldown(retryAfterSecs, manual);
+          nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
+        } else {
+          setError(message);
+        }
+      } finally {
+        setLoading(false);
+        schedule(nextSecs);
       }
-    } catch (e) {
-      const message = String(e);
-      const retryAfterSecs = retryAfterFromError(message);
-
-      if (retryAfterSecs !== null) {
-        setError(null);
-        startCooldown(retryAfterSecs, manual);
-        nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
-      } else {
-        setError(message);
-      }
-    } finally {
-      setLoading(false);
-      schedule(nextSecs);
-    }
-  }, [clearCooldown, gateway, schedule, startCooldown]);
+    },
+    [clearCooldown, gateway, schedule, startCooldown],
+  );
 
   const setIntervalMin = useCallback((value: number) => {
     setIntervalMinState(value);
@@ -154,9 +156,9 @@ export function useClaudeUsage(
 
   useEffect(() => {
     intervalRef.current = intervalMin;
-    saveIntervalMin(intervalMin);
+    saveIntervalMin(storageKey, intervalMin);
     if (Date.now() >= cooldownUntilRef.current) schedule(intervalMin * 60);
-  }, [intervalMin, schedule]);
+  }, [intervalMin, schedule, storageKey]);
 
   useEffect(() => {
     cooldownUntilRef.current = cooldownUntil;
@@ -168,17 +170,13 @@ export function useClaudeUsage(
     return () => window.clearInterval(id);
   }, [cooldownUntil]);
 
-  const internalCooldownLeft = Math.max(
-    0,
-    Math.ceil((cooldownUntil - Date.now()) / 1000),
-  );
+  const internalCooldownLeft = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
   const cooldownElapsedSecs =
     cooldownStartedAt > 0 ? Math.floor((Date.now() - cooldownStartedAt) / 1000) : 0;
   const internalCooling = internalCooldownLeft > 0;
   const cooling = cooldownVisible && internalCooling;
   const cooldownLeft = cooling ? internalCooldownLeft : 0;
-  const canManualRefresh =
-    !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
+  const canManualRefresh = !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
   const shouldForceManualRefresh = internalCooling && canManualRefresh;
 
   return {

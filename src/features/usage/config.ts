@@ -1,4 +1,4 @@
-export const INTERVAL_KEY = "handobar.intervalMin";
+// 폴링/쿨다운 상수 (provider 공통). interval 저장 키는 provider별로 다르므로 여기 두지 않는다.
 export const MIN_INTERVAL = 1;
 export const MAX_INTERVAL = 10;
 export const DEFAULT_INTERVAL = 5;

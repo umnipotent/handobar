@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { clampIntervalMin, loadIntervalMin, saveIntervalMin } from "./storage";
-import { DEFAULT_INTERVAL, INTERVAL_KEY, MAX_INTERVAL, MIN_INTERVAL } from "./config";
+import { DEFAULT_INTERVAL, MAX_INTERVAL, MIN_INTERVAL } from "./config";
+
+const TEST_KEY = "handobar.test.intervalMin";
 
 // Simple localStorage mock for Node.js environment
 class LocalStorageMock {
@@ -44,35 +46,42 @@ describe("clampIntervalMin", () => {
   });
 });
 
-describe("localStorage operations", () => {
+describe("localStorage operations (per provider key)", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
   it("should load DEFAULT_INTERVAL if localstorage is empty or invalid", () => {
-    expect(loadIntervalMin()).toBe(DEFAULT_INTERVAL);
+    expect(loadIntervalMin(TEST_KEY)).toBe(DEFAULT_INTERVAL);
 
-    localStorage.setItem(INTERVAL_KEY, "invalid");
-    expect(loadIntervalMin()).toBe(DEFAULT_INTERVAL);
+    localStorage.setItem(TEST_KEY, "invalid");
+    expect(loadIntervalMin(TEST_KEY)).toBe(DEFAULT_INTERVAL);
   });
 
   it("should load clamped value if localstorage contains out-of-bound numbers", () => {
-    localStorage.setItem(INTERVAL_KEY, String(MIN_INTERVAL - 1));
-    expect(loadIntervalMin()).toBe(MIN_INTERVAL);
+    localStorage.setItem(TEST_KEY, String(MIN_INTERVAL - 1));
+    expect(loadIntervalMin(TEST_KEY)).toBe(MIN_INTERVAL);
 
-    localStorage.setItem(INTERVAL_KEY, String(MAX_INTERVAL + 1));
-    expect(loadIntervalMin()).toBe(MAX_INTERVAL);
+    localStorage.setItem(TEST_KEY, String(MAX_INTERVAL + 1));
+    expect(loadIntervalMin(TEST_KEY)).toBe(MAX_INTERVAL);
   });
 
-  it("should save interval clamped to bounds", () => {
-    saveIntervalMin(5);
-    expect(localStorage.getItem(INTERVAL_KEY)).toBe("5");
+  it("should save interval clamped to bounds under the given key", () => {
+    saveIntervalMin(TEST_KEY, 5);
+    expect(localStorage.getItem(TEST_KEY)).toBe("5");
 
-    saveIntervalMin(MIN_INTERVAL - 1);
-    expect(localStorage.getItem(INTERVAL_KEY)).toBe(String(MIN_INTERVAL));
+    saveIntervalMin(TEST_KEY, MIN_INTERVAL - 1);
+    expect(localStorage.getItem(TEST_KEY)).toBe(String(MIN_INTERVAL));
 
-    saveIntervalMin(MAX_INTERVAL + 1);
-    expect(localStorage.getItem(INTERVAL_KEY)).toBe(String(MAX_INTERVAL));
+    saveIntervalMin(TEST_KEY, MAX_INTERVAL + 1);
+    expect(localStorage.getItem(TEST_KEY)).toBe(String(MAX_INTERVAL));
+  });
+
+  it("should isolate values across different provider keys", () => {
+    saveIntervalMin("handobar.claude.intervalMin", 3);
+    saveIntervalMin("handobar.codex.intervalMin", 8);
+    expect(loadIntervalMin("handobar.claude.intervalMin")).toBe(3);
+    expect(loadIntervalMin("handobar.codex.intervalMin")).toBe(8);
   });
 });
