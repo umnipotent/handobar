@@ -157,6 +157,10 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 [Semantic Versioning](https://semver.org/lang/ko/) (`MAJOR.MINOR.PATCH`) 을 따른다.
 
+### Git 운영 규칙
+
+- **Force Push 금지**: 원격 저장소의 커밋 히스토리를 파괴하는 강제 푸시(`--force`, `-f`)는 어떠한 경우에도 허용하지 않는다. 원격 브랜치와 로컬 브랜치가 갈라진 경우 강제로 덮어쓰는 대신, 원격의 변경 사항을 병합(`git pull`)하거나 재정렬(`git rebase`)하여 해결한다.
+
 ### 버전 단일 출처(Single Source of Truth)
 
 버전 번호는 아래 **네 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
@@ -178,7 +182,7 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
-> 현재 버전: **`0.1.2`** (스킬 인프라 정비: commit-message·version-bump, 심볼릭 링크 문서화).
+> 현재 버전: **`0.1.3`** (스킬 인프라 정비: commit-message·version-bump, 심볼릭 링크 문서화).
 
 ## 스킬(Skills)
 
