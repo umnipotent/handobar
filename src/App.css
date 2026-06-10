@@ -41,6 +41,18 @@ h1 {
   border-radius: 999px;
 }
 
+.last-refresh {
+  margin: -6px 0 12px;
+  font-size: 11px;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.last-refresh time {
+  color: #444;
+}
+
 .card {
   padding: 16px;
   border: 1px solid #ddd;

@@ -41,7 +41,23 @@ function formatReset(iso: string): string {
   return h > 0 ? `${h}시간 ${m}분 후 리셋` : `${m}분 후 리셋`;
 }
 
-function WindowCard({ title, hint, data }: { title: string; hint: string; data: UsageWindow | null }) {
+function formatKstIsoWithoutTimezone(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 19);
+}
+
+function WindowCard({
+  title,
+  hint,
+  data,
+}: {
+  title: string;
+  hint: string;
+  data: UsageWindow | null;
+}) {
   const remaining = data ? Math.round(data.remaining) : null;
   const low = remaining !== null && remaining <= 15;
   return (
@@ -55,7 +71,10 @@ function WindowCard({ title, hint, data }: { title: string; hint: string; data: 
         <span className="remaining-label">잔여</span>
       </div>
       <div className="bar">
-        <div className={`bar-fill ${low ? "low" : ""}`} style={{ width: `${remaining ?? 0}%` }} />
+        <div
+          className={`bar-fill ${low ? "low" : ""}`}
+          style={{ width: `${remaining ?? 0}%` }}
+        />
       </div>
       <div className="reset">{data ? formatReset(data.resets_at) : ""}</div>
     </section>
@@ -137,28 +156,55 @@ function App() {
     return () => window.clearInterval(id);
   }, [cooldownUntil]);
 
-  const cooldownLeft = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+  const cooldownLeft = Math.max(
+    0,
+    Math.ceil((cooldownUntil - Date.now()) / 1000),
+  );
   const cooling = cooldownLeft > 0;
 
   return (
     <main className="container">
       <header className="top">
-        <h1>Claude Code 잔여 사용량</h1>
-        {usage?.subscription && <span className="badge">{usage.subscription}</span>}
+        <h1>Claude Code</h1>
+        {usage?.subscription && (
+          <span className="badge">{usage.subscription}</span>
+        )}
       </header>
+
+      {usage?.fetched_at && (
+        <p className="last-refresh">
+          마지막 갱신{" "}
+          <time dateTime={usage.fetched_at}>
+            {formatKstIsoWithoutTimezone(usage.fetched_at)}
+          </time>
+        </p>
+      )}
 
       {error && <p className="error">{error}</p>}
       {cooling && (
-        <p className="cooldown">요청 제한 중 · {cooldownLeft}초 후 자동 재시도</p>
+        <p className="cooldown">
+          요청 제한 중 · {cooldownLeft}초 후 자동 재시도
+        </p>
       )}
 
-      <WindowCard title="최근 5시간" hint="5h 한도" data={usage?.five_hour ?? null} />
-      <WindowCard title="주간" hint="7일 한도" data={usage?.seven_day ?? null} />
+      <WindowCard
+        title="최근 5시간"
+        hint="5h 한도"
+        data={usage?.five_hour ?? null}
+      />
+      <WindowCard
+        title="주간"
+        hint="7일 한도"
+        data={usage?.seven_day ?? null}
+      />
 
       <div className="controls">
         <label>
           갱신 주기
-          <select value={intervalMin} onChange={(e) => setIntervalMin(Number(e.target.value))}>
+          <select
+            value={intervalMin}
+            onChange={(e) => setIntervalMin(Number(e.target.value))}
+          >
             {Array.from({ length: MAX_INTERVAL }, (_, i) => i + 1).map((m) => (
               <option key={m} value={m}>
                 {m}분
@@ -167,7 +213,11 @@ function App() {
           </select>
         </label>
         <button onClick={tick} disabled={loading || cooling}>
-          {loading ? "불러오는 중…" : cooling ? `${cooldownLeft}초` : "새로고침"}
+          {loading
+            ? "불러오는 중…"
+            : cooling
+              ? `${cooldownLeft}초`
+              : "새로고침"}
         </button>
       </div>
     </main>
