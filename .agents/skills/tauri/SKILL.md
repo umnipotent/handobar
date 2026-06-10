@@ -18,13 +18,15 @@ brew install node pnpm rust
 
 최초 스캐폴드 메모는 [`docs/tauri.md`](../../../docs/tauri.md), brew 버전은 [`docs/brew.md`](../../../docs/brew.md) 참고.
 
-## 실행 / 빌드 명령
+## 실행 / 빌드 / 테스트 명령
 
 ```sh
 pnpm install          # 의존성 설치 (최초 1회 pnpm approve-builds 필요할 수 있음)
 pnpm tauri dev        # 개발 모드 (Vite + Tauri 동시 실행)
 pnpm tauri build      # 프로덕션 빌드 (.app / 설치 파일 생성)
 pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
+cargo test --manifest-path src-tauri/Cargo.toml # 백엔드 Rust 유닛 테스트 실행
+pnpm test             # 프론트엔드 React/TS 유닛 테스트 실행 (Vitest)
 ```
 
 ## 프론트 ↔ 백엔드 통신
@@ -68,5 +70,25 @@ src-tauri/
 
 ## 연관 스킬
 
-- [`claude-usage`](../claude-usage/SKILL.md): `usage.rs` 의 `get_claude_usage` 커맨드가 이 invoke/ACL 패턴 위에 올라간다.
+- [`claude-usage`](../claude-usage/SKILL.md): 이 기능이 올라가는 커맨드 등록 / invoke / ACL 일반 패턴.
 - [`version-bump`](../version-bump/SKILL.md): `tauri.conf.json` · `Cargo.toml` 의 `version` 동기화.
+
+## 유닛 테스트 (Unit Testing)
+
+handobar 프로젝트는 백엔드(Rust)와 프론트엔드(React/TS) 모두에 대해 합리적이고 신뢰할 수 있는 유닛 테스트를 지향한다.
+
+### 1. 백엔드 테스트 (Rust)
+- **테스트 대상**: 상태 비저장 변환 로직([models.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/models.rs)) 및 글로벌 뮤텍스를 활용하는 내부 캐시 흐름([cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs)).
+- **실행 방법**: `cargo test` (또는 `cargo test --manifest-path src-tauri/Cargo.toml`)
+- **가이드라인**:
+  - 파일 하단에 `#[cfg(test)] mod tests` 모듈을 정의하여 유닛 테스트를 작성한다.
+  - 글로벌 `static CACHE` 처럼 상태를 공유하는 컴포넌트를 테스트할 때는 각 테스트가 독립적으로 실행될 수 있도록 테스트 전용 초기화 함수(예: `reset_cache_for_test`)를 호출하여 이전 상태의 오염을 방지한다.
+  - 외부 API 호출이나 암호화 키체인 등 네이티브 시스템 자원은 테스트 대상에서 격리하고 순수 가공 로직 위주로 검증한다.
+
+### 2. 프론트엔드 테스트 (Vitest)
+- **테스트 대상**: 날짜 및 시간 포맷팅 변환 로직([format.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/format.ts)), localStorage 제어 및 범위 보정([storage.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/storage.ts)).
+- **실행 방법**: `pnpm test` (또는 `npx vitest run`)
+- **가이드라인**:
+  - 각 기능 폴더에 `<파일명>.test.ts` 형식의 테스트 파일을 작성한다.
+  - 시간/날짜처럼 동적으로 변하는 연산을 검증할 때는 `vi.useFakeTimers()`와 `vi.setSystemTime()`을 활용하여 시간을 고정한 후 단언문(Assert)을 확인한다.
+  - Node.js 환경에서 브라우저 전용 API인 `localStorage`를 직접 사용하는 로직을 유닛 테스트할 때는 간단한 `LocalStorageMock` 등의 클래스를 생성해 `global.localStorage`에 수동 바인딩하여 무의미한 외부 의존성을 최소화한다.

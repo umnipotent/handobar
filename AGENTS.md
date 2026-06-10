@@ -29,13 +29,15 @@
 ```
 handobar/
 ├─ src/                  # React 프론트엔드 (UI)
-│  ├─ App.tsx            # 메인 컴포넌트 (잔여 사용량 UI + 마지막 갱신 시각 + 폴링 주기 설정)
+│  ├─ App.tsx            # 앱 조립 컴포넌트
+│  ├─ features/
+│  │  └─ claudeUsage/   # Claude 사용량 UI/상태/API gateway/포맷팅
 │  ├─ main.tsx          # React 진입점
 │  └─ assets/
 ├─ src-tauri/            # Tauri / Rust 백엔드
 │  ├─ src/
 │  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + 커맨드 등록
-│  │  ├─ usage.rs       # Claude Code 잔여 사용량 fetch (키체인 토큰 → /api/oauth/usage)
+│  │  ├─ usage/         # Claude Code 잔여 사용량 fetch (커맨드/캐시/인증/API/모델)
 │  │  └─ main.rs        # 바이너리 진입점 → handobar_lib::run()
 │  ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar)
 │  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
@@ -78,14 +80,40 @@ pnpm tauri build                     # 프로덕션 빌드 (.app / 설치 파일
 > 실행/빌드, 프론트–백엔드 `invoke` 통신, 새 커맨드 추가 절차, 권한(ACL)의 **단일 출처는
 > [`tauri` 스킬](.agents/skills/tauri/SKILL.md)** 이다. Tauri 백엔드를 만질 때는 이 스킬을 따른다.
 
+## 유닛 테스트
+
+한도바는 코드 안정성을 유지하기 위해 백엔드와 프론트엔드 양쪽에서 합리적인 유닛 테스트 체계를 작성 및 실행한다.
+
+- **실행 명령**:
+  - **백엔드 (Rust)**: `cargo test` (또는 `cargo test --manifest-path src-tauri/Cargo.toml`)
+  - **프론트엔드 (Vitest)**: `pnpm test` (또는 `npx vitest run`)
+
+- **주요 테스트 영역**:
+  - **백엔드**:
+    - [models.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/models.rs): `ApiWindow` -> `UsageWindow` 매핑 및 clamp 로직 검증.
+    - [cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs): 상태 격리를 적용한 캐싱/stale 429 backoff 흐름 검증.
+  - **프론트엔드**:
+    - [format.test.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/format.test.ts): `formatReset` 및 타임존 보정을 다루는 `formatKstIsoWithoutTimezone` 검증 (가상 타이머 활용).
+    - [storage.test.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/storage.test.ts): localStorage 입출력 및 boundary clamp 검증 (LocalStorage Mock 활용).
+
+> 테스트 작성 전략, 시간 Mocking 및 전역 자원 모의 구현(Mocking) 가이드 등 상세한 가이드의 **단일 출처는
+> [`tauri` 스킬](.agents/skills/tauri/SKILL.md) 및 [`claude-usage` 스킬](.agents/skills/claude-usage/SKILL.md)** 에 구체화되어 있다.
+
 ## 사용량 추적 (Claude Code)
 
-`src-tauri/src/usage.rs` 의 `get_claude_usage` 커맨드가 **Claude Code 잔여 사용량**을 fetch한다
+`src-tauri/src/usage/` 의 `get_claude_usage` 커맨드가 **Claude Code 잔여 사용량**을 fetch한다
 (키체인 토큰 → `GET /api/oauth/usage`, 잔여 = 100 − utilization). Codex·Antigravity는 미포함.
 
 프론트엔드(`src/App.tsx`)는 응답의 `fetched_at` 을 마지막 갱신 시각으로 표시한다. 백엔드 값은
 RFC3339/UTC 문자열로 유지하고, 화면에는 **KST 기준 `YYYY-MM-DDThh:mm:ss`** 형식(타임존 표기 제외)으로
-변환해 보여준다.
+변환해 보여준다. 리셋 시각은 상대 시간(`4시간 15분 후 리셋`)과 정확한 KST 시각을 함께 표시한다.
+
+구조는 과한 계층화를 피하면서 기능 단위로 분리한다. 프론트엔드의 Claude 사용량 코드는
+`src/features/claudeUsage/` 아래에서 타입, 포맷팅, localStorage, Tauri gateway, 상태 훅, 표시 컴포넌트를
+나눈다. 백엔드의 Claude 사용량 코드는 `src-tauri/src/usage/` 아래에서 Tauri 커맨드 wrapper, use-case,
+API 호출, 키체인 인증, 캐시, 직렬화 모델을 나눈다. 외부 Tauri 커맨드명은 `get_claude_usage` 를 유지한다.
+화면 문구/용어는 `src/features/claudeUsage/copy.ts`, 백엔드 사용량 에러 메시지는
+`src-tauri/src/usage/messages.rs`, 트레이 라벨은 `src-tauri/src/labels.rs` 를 우선 수정한다.
 
 > 엔드포인트·인증·키체인 토큰·폴링/rate limit(429 backoff)의 **단일 출처는
 > [`claude-usage` 스킬](.agents/skills/claude-usage/SKILL.md)** 이다.
@@ -118,25 +146,26 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 ### 버전 단일 출처(Single Source of Truth)
 
-버전 번호는 아래 **세 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
+버전 번호는 아래 **네 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
 
 | 파일 | 필드 |
 | --- | --- |
 | `package.json` | `"version"` |
 | `src-tauri/tauri.conf.json` | `"version"` |
 | `src-tauri/Cargo.toml` | `version` (변경 후 `Cargo.lock` 도 갱신) |
+| `AGENTS.md` | `현재 버전: **`x.y.z`**` |
 
 ### 릴리스 절차
 
 이 절차는 [`version-bump` 스킬](#스킬skills)로 자동화되어 있다. **버전업 시 스킬을 사용한다.**
 
-1. 네 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`)의 버전을 동일하게 맞춘다.
+1. 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)의 버전을 동일하게 맞춘다.
    → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
 2. [`commit-message` 스킬](#스킬skills)을 따라 `chore: x.y.z 버전업` 으로 커밋한다.
 3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
-> 현재 버전: **`0.0.2`** (스킬 인프라 정비: commit-message·version-bump, 심볼릭 링크 문서화).
+> 현재 버전: **`0.1.0`** (스킬 인프라 정비: commit-message·version-bump, 심볼릭 링크 문서화).
 
 ## 스킬(Skills)
 

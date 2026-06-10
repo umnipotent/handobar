@@ -16,6 +16,7 @@ handobar의 버전 번호는 **네 곳**에 흩어져 있어 손으로 고치면
 | `src-tauri/tauri.conf.json` | `"version"` |
 | `src-tauri/Cargo.toml` | `[package]` 의 `version` |
 | `src-tauri/Cargo.lock` | `handobar` 패키지 항목의 `version` |
+| `AGENTS.md` | `현재 버전: **`x.y.z`**` |
 
 ## 사용 방법
 
@@ -24,16 +25,16 @@ handobar의 버전 번호는 **네 곳**에 흩어져 있어 손으로 고치면
 [SemVer](https://semver.org/lang/ko/) `MAJOR.MINOR.PATCH` 를 따른다. 사용자가 명시하지 않았다면
 변경 성격(버그 수정→PATCH, 기능 추가→MINOR, 호환성 깨짐→MAJOR)을 근거로 제안하고 확인받는다.
 
-### 2. 네 파일 동기화
+### 2. 다섯 파일 동기화
 
-번들 스크립트로 네 파일을 한 번에 수정한다. 정규식 in-place 치환이라 cargo/네트워크가 필요 없다.
+번들 스크립트로 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)을 한 번에 수정한다. 정규식 in-place 치환이라 cargo/네트워크가 필요 없다.
 
 ```bash
 python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
 ```
 
 스크립트는 각 파일에서 정확히 한 곳만 치환하며, 대상을 못 찾으면 즉시 실패한다(부분 적용 방지).
-실행 후 `git diff` 로 네 파일이 모두 같은 버전으로 바뀌었는지 확인한다.
+실행 후 `git diff` 로 다섯 파일이 모두 같은 버전으로 바뀌었는지 확인한다.
 
 ### 3. 커밋
 
@@ -58,6 +59,6 @@ git tag -a x.y.z -m "x.y.z"
 
 ## 검증 체크리스트
 
-- [ ] 네 파일의 버전 문자열이 모두 동일한가 (`git diff` 로 확인)
+- [ ] 다섯 파일의 버전 문자열이 모두 동일한가 (`git diff` 로 확인)
 - [ ] 커밋 메시지가 `chore: x.y.z 버전업` 형식인가
 - [ ] 태그가 `v` 없는 순수 버전이고 버전업 커밋을 가리키는가
