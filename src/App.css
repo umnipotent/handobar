@@ -348,6 +348,17 @@ button:disabled {
   background: #ebebee;
 }
 
+.meta-code.copied {
+  background: #efeaff;
+  color: #6b4eff;
+  border-color: #dcd3ff;
+}
+
+.meta-code.copied:hover {
+  background: #e5ddff;
+}
+
+
 .meta-link-btn {
   background: none;
   border: none;

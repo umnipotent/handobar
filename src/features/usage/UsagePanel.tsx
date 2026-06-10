@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { USAGE_COPY } from "./copy";
 import { formatKstIsoWithoutTimezone } from "./format";
@@ -38,6 +39,8 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
     dismissError,
   } = useUsage(gateway, storageKey);
 
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
   const handleOpenUrl = async (url: string) => {
     try {
       await openUrl(url);
@@ -45,6 +48,41 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
       window.open(url, "_blank");
     }
   };
+
+  const handleCopy = async (text: string) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedText(text);
+        setTimeout(() => setCopiedText(null), 2000);
+        return;
+      } catch (err) {
+        console.error("navigator.clipboard failed, falling back...", err);
+      }
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand("copy");
+      if (successful) {
+        setCopiedText(text);
+        setTimeout(() => setCopiedText(null), 2000);
+      }
+    } catch (err) {
+      console.error("Fallback copy failed", err);
+    } finally {
+      document.body.removeChild(textArea);
+    }
+  };
+
 
 
 
@@ -146,11 +184,11 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
             <div className="meta-item">
               <span className="meta-label">{USAGE_COPY.meta.cliLabel}</span>
               <code
-                className="meta-code"
-                onClick={() => navigator.clipboard.writeText(cliCmd)}
-                title={USAGE_COPY.meta.clipboardCopied}
+                className={`meta-code ${copiedText === cliCmd ? "copied" : ""}`}
+                onClick={() => handleCopy(cliCmd)}
+                title={copiedText === cliCmd ? USAGE_COPY.meta.copySuccess : USAGE_COPY.meta.clipboardCopied}
               >
-                {cliCmd}
+                {copiedText === cliCmd ? USAGE_COPY.meta.copiedLabel : cliCmd}
               </code>
             </div>
           )}

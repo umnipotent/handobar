@@ -16,7 +16,10 @@ export const USAGE_COPY = {
     cliLabel: "CLI",
     webLabel: "Web",
     clipboardCopied: "클릭하여 복사",
+    copySuccess: "복사 완료!",
+    copiedLabel: "복사됨!",
   },
+
   windows: {
 
     fiveHour: {
