@@ -96,6 +96,8 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
    - 인증: 별도 로그인 없이 이미 로그인된 Claude Code 자격증명을 재사용한다(토큰 갱신은 Claude Code가 담당).
      토큰 없음/만료 시 "로그인 필요" 메시지를 반환한다. 첫 실행 시 macOS 키체인 접근 허용 프롬프트가 뜰 수 있다.
    - 폴링 주기는 프론트에서 1~10분으로 조정(localStorage `handobar.intervalMin`).
+   - 이 엔드포인트는 자체 rate limit이 있다. 백엔드는 전역 캐시로 짧은 간격 중복 호출을 합치고,
+     `429` 의 `Retry-After` 동안 호출을 멈추고 마지막 값을 반환하며, 프론트는 그만큼 backoff 후 자동 재시도한다.
    - 남은 작업: **Codex / Antigravity** 의 사용량 소스를 조사해 같은 방식으로 추가.
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함. `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
