@@ -1,137 +1,135 @@
-//! Claude Code 사용량 집계.
+//! Claude Code 잔여 사용량 fetch.
 //!
-//! 데이터 소스는 `~/.claude/projects/**/*.jsonl` 트랜스크립트다. 이 디렉터리는
-//! Claude Code 세션 전용이므로 Codex·Antigravity 등 다른 도구의 사용량은 섞이지 않는다.
-//! 각 assistant 메시지 라인의 `timestamp` 와 `message.usage` 토큰을 읽어
-//! **롤링 5시간 / 7일** 윈도우로 합산한다(서버 측 한도와 정확히 일치하지는 않는 근사치).
+//! 로컬 로그를 파싱하는 대신 Claude의 OAuth 사용량 엔드포인트를 직접 호출한다.
+//! 인증은 이미 로그인된 Claude Code의 자격증명을 **OS 키체인**에서 읽어 재사용한다
+//! (별도 로그인 불필요, 토큰 갱신은 Claude Code가 담당).
+//!
+//! - 엔드포인트: `GET https://api.anthropic.com/api/oauth/usage`
+//! - 응답의 `utilization`(0~100, 사용률)에서 **잔여 = 100 - utilization** 을 계산한다.
+//! - Claude Code 사용량만 대상이며 Codex·Antigravity 등 다른 도구는 포함하지 않는다.
 
-use std::fs;
-use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
+use serde::{Deserialize, Serialize};
 
-use chrono::{DateTime, Utc};
-use serde::Serialize;
+const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
+const KEYCHAIN_SERVICE: &str = "Claude Code-credentials";
+const OAUTH_BETA: &str = "oauth-2025-04-20";
 
-const FIVE_HOURS_SECS: i64 = 5 * 60 * 60;
-const WEEK_SECS: i64 = 7 * 24 * 60 * 60;
-
-/// 한 시간 윈도우의 누적 사용량.
-#[derive(Serialize, Default)]
-pub struct UsageWindow {
-    /// 입력·출력·캐시(생성/조회)를 모두 합한 총 토큰.
-    pub tokens: u64,
-    /// 집계에 포함된 assistant 메시지 수.
-    pub messages: u64,
+/// 키체인에 저장된 Claude Code 자격증명(JSON).
+#[derive(Deserialize)]
+struct StoredCredentials {
+    #[serde(rename = "claudeAiOauth")]
+    oauth: OauthTokens,
 }
 
-/// 프론트로 전달하는 Claude Code 사용량 스냅샷.
+#[derive(Deserialize)]
+struct OauthTokens {
+    #[serde(rename = "accessToken")]
+    access_token: String,
+    #[serde(rename = "expiresAt")]
+    expires_at: i64,
+    #[serde(rename = "subscriptionType")]
+    subscription_type: Option<String>,
+}
+
+/// `/api/oauth/usage` 응답의 한 윈도우.
+#[derive(Deserialize)]
+struct ApiWindow {
+    utilization: f64,
+    resets_at: String,
+}
+
+#[derive(Deserialize)]
+struct ApiUsage {
+    five_hour: Option<ApiWindow>,
+    seven_day: Option<ApiWindow>,
+}
+
+/// 프론트로 전달하는 한 윈도우의 **잔여** 사용량.
+#[derive(Serialize)]
+pub struct UsageWindow {
+    /// 잔여 비율(0~100).
+    pub remaining: f64,
+    /// 사용 비율(0~100).
+    pub used: f64,
+    /// 윈도우가 리셋되는 시각(RFC3339).
+    pub resets_at: String,
+}
+
+impl From<ApiWindow> for UsageWindow {
+    fn from(w: ApiWindow) -> Self {
+        UsageWindow {
+            remaining: (100.0 - w.utilization).clamp(0.0, 100.0),
+            used: w.utilization,
+            resets_at: w.resets_at,
+        }
+    }
+}
+
+/// 프론트로 전달하는 잔여 사용량 스냅샷.
 #[derive(Serialize)]
 pub struct ClaudeUsage {
-    pub five_hour: UsageWindow,
-    pub weekly: UsageWindow,
-    /// 집계 시각(RFC3339).
-    pub updated_at: String,
+    pub five_hour: Option<UsageWindow>,
+    pub seven_day: Option<UsageWindow>,
+    pub subscription: Option<String>,
+    /// fetch 시각(RFC3339).
+    pub fetched_at: String,
 }
 
-fn projects_dir() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".claude").join("projects"))
+/// 현재 OS 사용자 이름(키체인 account 키).
+fn current_user() -> Result<String, String> {
+    std::env::var("USER")
+        .or_else(|_| std::env::var("USERNAME"))
+        .map_err(|_| "현재 사용자 이름을 확인할 수 없습니다".to_string())
 }
 
-/// `dir` 이하의 `.jsonl` 파일을 재귀적으로 모은다.
-fn collect_jsonl(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            collect_jsonl(&path, out);
-        } else if path.extension().and_then(|s| s.to_str()) == Some("jsonl") {
-            out.push(path);
-        }
-    }
+/// 키체인에서 Claude Code OAuth 토큰을 읽는다.
+fn read_credentials() -> Result<OauthTokens, String> {
+    let user = current_user()?;
+    let entry = keyring::Entry::new(KEYCHAIN_SERVICE, &user).map_err(|e| e.to_string())?;
+    let secret = entry.get_password().map_err(|_| {
+        "Claude Code 로그인 정보를 찾을 수 없습니다. 터미널에서 `claude` 로 로그인하세요.".to_string()
+    })?;
+    let creds: StoredCredentials =
+        serde_json::from_str(&secret).map_err(|e| format!("자격증명 파싱 실패: {e}"))?;
+    Ok(creds.oauth)
 }
 
-/// assistant 메시지의 `usage` 객체에서 총 토큰을 합산한다.
-/// 중첩된 `iterations` 는 상위 합계의 재분해이므로 무시하고 최상위 키만 더한다.
-fn sum_tokens(usage: &serde_json::Value) -> u64 {
-    let field = |key: &str| usage.get(key).and_then(serde_json::Value::as_u64).unwrap_or(0);
-    field("input_tokens")
-        + field("output_tokens")
-        + field("cache_creation_input_tokens")
-        + field("cache_read_input_tokens")
-}
-
-/// 현재 시점 기준 롤링 5시간 / 7일 사용량을 계산한다.
-pub fn compute() -> ClaudeUsage {
-    let now = Utc::now();
-    let mut five_hour = UsageWindow::default();
-    let mut weekly = UsageWindow::default();
-
-    if let Some(dir) = projects_dir() {
-        let mut files = Vec::new();
-        collect_jsonl(&dir, &mut files);
-
-        // 최근 7일 안에 수정된 적 없는 파일은 주간 윈도우에 기여할 수 없으므로 통째로 건너뛴다.
-        let week_ago = SystemTime::now() - Duration::from_secs(WEEK_SECS as u64);
-
-        for path in files {
-            if let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) {
-                if modified < week_ago {
-                    continue;
-                }
-            }
-            let Ok(file) = fs::File::open(&path) else {
-                continue;
-            };
-            for line in BufReader::new(file).lines().map_while(Result::ok) {
-                // 토큰 사용량이 없는 라인은 빠르게 건너뛴다.
-                if !line.contains("\"usage\"") {
-                    continue;
-                }
-                let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) else {
-                    continue;
-                };
-                if value.get("type").and_then(serde_json::Value::as_str) != Some("assistant") {
-                    continue;
-                }
-                let Some(ts) = value.get("timestamp").and_then(serde_json::Value::as_str) else {
-                    continue;
-                };
-                let Ok(ts) = DateTime::parse_from_rfc3339(ts) else {
-                    continue;
-                };
-                let age = now
-                    .signed_duration_since(ts.with_timezone(&Utc))
-                    .num_seconds();
-                if !(0..=WEEK_SECS).contains(&age) {
-                    continue;
-                }
-                let Some(usage) = value.get("message").and_then(|m| m.get("usage")) else {
-                    continue;
-                };
-                let tokens = sum_tokens(usage);
-
-                weekly.tokens += tokens;
-                weekly.messages += 1;
-                if age <= FIVE_HOURS_SECS {
-                    five_hour.tokens += tokens;
-                    five_hour.messages += 1;
-                }
-            }
-        }
-    }
-
-    ClaudeUsage {
-        five_hour,
-        weekly,
-        updated_at: now.to_rfc3339(),
-    }
-}
-
-/// 프론트엔드에서 호출하는 Tauri 커맨드.
+/// 잔여 사용량을 직접 fetch한다. 실패 시 사용자에게 보여줄 한국어 메시지를 반환한다.
 #[tauri::command]
-pub fn get_claude_usage() -> ClaudeUsage {
-    compute()
+pub async fn get_claude_usage() -> Result<ClaudeUsage, String> {
+    let creds = read_credentials()?;
+
+    if creds.expires_at < chrono::Utc::now().timestamp_millis() {
+        return Err("로그인이 만료되었습니다. Claude Code에서 다시 로그인하세요.".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(USAGE_URL)
+        .bearer_auth(&creds.access_token)
+        .header("anthropic-beta", OAUTH_BETA)
+        .header("Content-Type", "application/json")
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("사용량 요청 실패: {e}"))?;
+
+    if resp.status() == reqwest::StatusCode::UNAUTHORIZED {
+        return Err("인증에 실패했습니다(토큰 만료/무효). Claude Code에서 다시 로그인하세요.".to_string());
+    }
+    if !resp.status().is_success() {
+        return Err(format!("API 오류: {}", resp.status()));
+    }
+
+    let api: ApiUsage = resp
+        .json()
+        .await
+        .map_err(|e| format!("응답 파싱 실패: {e}"))?;
+
+    Ok(ClaudeUsage {
+        five_hour: api.five_hour.map(UsageWindow::from),
+        seven_day: api.seven_day.map(UsageWindow::from),
+        subscription: creds.subscription_type,
+        fetched_at: chrono::Utc::now().to_rfc3339(),
+    })
 }

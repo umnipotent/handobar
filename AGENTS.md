@@ -34,7 +34,7 @@ handobar/
 ├─ src-tauri/            # Tauri / Rust 백엔드
 │  ├─ src/
 │  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + 커맨드 등록
-│  │  ├─ usage.rs       # Claude Code 사용량 집계 (~/.claude/projects JSONL → 5h/7d)
+│  │  ├─ usage.rs       # Claude Code 잔여 사용량 fetch (키체인 토큰 → /api/oauth/usage)
 │  │  └─ main.rs        # 바이너리 진입점 → handobar_lib::run()
 │  ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar)
 │  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
@@ -90,10 +90,13 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
 
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
    - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
-2. **사용량 데이터 수집**: **Claude Code** 는 구현됨 — `usage.rs` 가 `~/.claude/projects/**/*.jsonl`
-   트랜스크립트의 `message.usage` 토큰을 롤링 5시간/7일로 집계한다(`get_claude_usage` 커맨드).
+2. **사용량 데이터 수집**: **Claude Code** 는 구현됨 — `usage.rs` 의 `get_claude_usage` 커맨드가
+   OS 키체인(`Claude Code-credentials`)의 OAuth 토큰을 읽어 `GET https://api.anthropic.com/api/oauth/usage`
+   를 직접 호출하고, `utilization` 에서 **잔여 = 100 - utilization** 를 계산해 5시간·주간 윈도우로 반환한다.
+   - 인증: 별도 로그인 없이 이미 로그인된 Claude Code 자격증명을 재사용한다(토큰 갱신은 Claude Code가 담당).
+     토큰 없음/만료 시 "로그인 필요" 메시지를 반환한다. 첫 실행 시 macOS 키체인 접근 허용 프롬프트가 뜰 수 있다.
+   - 폴링 주기는 프론트에서 1~10분으로 조정(localStorage `handobar.intervalMin`).
    - 남은 작업: **Codex / Antigravity** 의 사용량 소스를 조사해 같은 방식으로 추가.
-   - 한계: JSONL 합산은 서버 측 실제 한도와 정확히 일치하지 않는 근사치다(캐시 토큰 포함).
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함. `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
 4. **자동 생성/빌드 산출물**: `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 커밋 대상 아님.
