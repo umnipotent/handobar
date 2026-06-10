@@ -7,7 +7,8 @@ export const CLAUDE_USAGE_PROVIDER: UsageProvider = {
   title: "Claude Code",
   gateway: createTauriUsageGateway("get_claude_usage"),
   storageKey: "handobar.claude.intervalMin",
-  cliCmd: "claude",
-  webUrl: "https://console.anthropic.com",
+  cliCmd: 'claude -p "/usage"',
+  webUrl: "https://claude.ai/new#settings/usage",
 };
+
 
