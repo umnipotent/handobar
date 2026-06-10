@@ -55,8 +55,15 @@ def main() -> None:
         version,
     )
 
+    # AGENTS.md: 현재 버전: **`x.y.z`**
+    replace_once(
+        root / "AGENTS.md",
+        rf'(현재 버전:\s*\*\*`){SEMVER}(`\*\*)',
+        version,
+    )
+
     print(
-        f"bumped to {version} → package.json, tauri.conf.json, Cargo.toml, Cargo.lock"
+        f"bumped to {version} → package.json, tauri.conf.json, Cargo.toml, Cargo.lock, AGENTS.md"
     )
 
 
