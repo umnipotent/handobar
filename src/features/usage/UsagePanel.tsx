@@ -71,9 +71,10 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
           message={error}
           type="danger"
           onDismiss={dismissError}
-          dismissLabel="에러 메시지 닫기"
+          dismissLabel={USAGE_COPY.dismiss.error}
         />
       )}
+
       {cooling && (
         <AlertBanner
           message={USAGE_COPY.cooldownMessage(cooldownLeft)}
@@ -84,18 +85,18 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
       )}
       {showingFastModeWarning && (
         <AlertBanner
-          message="fast mode를 꺼주세요"
+          message={USAGE_COPY.warnings.fastMode}
           type="danger"
           onDismiss={dismissFastModeWarning}
-          dismissLabel="경고 닫기"
+          dismissLabel={USAGE_COPY.dismiss.warning}
         />
       )}
       {showingSubModelWarning && (
         <AlertBanner
-          message="하위 모델 전환을 추천합니다"
+          message={USAGE_COPY.warnings.subModel}
           type="danger"
           onDismiss={dismissSubModelWarning}
-          dismissLabel="경고 닫기"
+          dismissLabel={USAGE_COPY.dismiss.warning}
         />
       )}
 
@@ -142,11 +143,11 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
         <div className="provider-meta">
           {cliCmd && (
             <div className="meta-item">
-              <span className="meta-label">CLI</span>
+              <span className="meta-label">{USAGE_COPY.meta.cliLabel}</span>
               <code
                 className="meta-code"
                 onClick={() => navigator.clipboard.writeText(cliCmd)}
-                title="클릭하여 복사"
+                title={USAGE_COPY.meta.clipboardCopied}
               >
                 {cliCmd}
               </code>
@@ -154,7 +155,7 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
           )}
           {webUrl && (
             <div className="meta-item">
-              <span className="meta-label">Web</span>
+              <span className="meta-label">{USAGE_COPY.meta.webLabel}</span>
               <button
                 type="button"
                 className="meta-link-btn"

@@ -3,7 +3,21 @@ export const USAGE_COPY = {
   lastRefreshLabel: "마지막 갱신",
   cooldownMessage: (seconds: number) => `요청 제한 중 · ${seconds}초 후 자동 재시도`,
   dismissCooldownLabel: "요청 제한 메시지 닫기",
+  warnings: {
+    fastMode: "fast mode를 꺼주세요",
+    subModel: "하위 모델 전환을 추천합니다",
+  },
+  dismiss: {
+    error: "에러 메시지 닫기",
+    warning: "경고 닫기",
+  },
+  meta: {
+    cliLabel: "CLI",
+    webLabel: "Web",
+    clipboardCopied: "클릭하여 복사",
+  },
   windows: {
+
     fiveHour: {
       title: "최근 5시간",
       hint: "5h 한도",
