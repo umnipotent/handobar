@@ -19,16 +19,16 @@
 | 번들러 | **Vite 7** | 개발 서버(포트 `1420` 고정) 및 빌드 |
 | 패키지 매니저 | **pnpm** | `pnpm-workspace.yaml` 사용 |
 
-> 현재 상태(`0.0.1`): 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 사용량 표시 UI의
-> 기본 골격이 구현됨. `get_usage_summary` 커맨드는 아직 **더미 문자열**을 반환하며,
-> 실제 사용량 수집 로직은 미구현.
+> 현재 상태: 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 **Claude Code 잔여 사용량**
+> 표시 UI가 구현됨([사용량 추적](#사용량-추적-claude-code) 참고). 릴리스 버전은 `0.0.2`,
+> 사용량 기능은 `feature-cc` 브랜치에서 개발 중(미릴리스). Codex·Antigravity 연동은 미구현.
 
 ## 디렉터리 구조
 
 ```
 handobar/
 ├─ src/                  # React 프론트엔드 (UI)
-│  ├─ App.tsx            # 메인 컴포넌트 (사용량 표시 UI)
+│  ├─ App.tsx            # 메인 컴포넌트 (잔여 사용량 UI + 폴링 주기 설정)
 │  ├─ main.tsx          # React 진입점
 │  └─ assets/
 ├─ src-tauri/            # Tauri / Rust 백엔드
@@ -86,19 +86,41 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
 - 프론트–백엔드 통신: `@tauri-apps/api` 의 `invoke("커맨드명", { 인자 })` 로 Rust `#[tauri::command]` 호출.
 - 새 네이티브 기능 추가 시: `src-tauri/src/lib.rs` 에 커맨드 정의 → `invoke_handler` 에 등록 → 프론트에서 `invoke` 호출.
 
+## 사용량 추적 (Claude Code)
+
+`src-tauri/src/usage.rs` 의 `get_claude_usage` 커맨드가 **Claude Code 잔여 사용량**을 직접 fetch한다.
+Claude Code 사용량만 대상이며 Codex·Antigravity는 포함하지 않는다.
+
+### 데이터 소스 & 인증
+
+| 항목 | 값 |
+| --- | --- |
+| 엔드포인트 | `GET https://api.anthropic.com/api/oauth/usage` |
+| 필수 헤더 | `Authorization: Bearer <token>`, `anthropic-beta: oauth-2025-04-20` |
+| 토큰 출처 | OS 키체인 `Claude Code-credentials` (account = OS 사용자명)의 `claudeAiOauth.accessToken` |
+| 응답 | `five_hour` / `seven_day` 각각 `utilization`(0~100, 사용률) + `resets_at`(RFC3339) |
+
+- **잔여 = 100 − utilization** 로 계산해 5시간·주간 윈도우로 반환한다.
+- 인증은 **이미 로그인된 Claude Code 자격증명을 재사용**한다(별도 로그인·토큰 갱신 없음, 갱신은 Claude Code 담당).
+  토큰 없음/만료(또는 `401`)면 한국어 로그인 안내 메시지를 반환한다.
+- 첫 실행 시 macOS가 **키체인 접근 허용 프롬프트**를 띄울 수 있다("항상 허용" 선택).
+
+### 폴링 & rate limit
+
+- 폴링 주기는 프론트에서 **1~10분**으로 조정한다(localStorage `handobar.intervalMin`, 기본 5분).
+- 이 엔드포인트는 자체 rate limit이 있어 과도 호출 시 `429 (Retry-After)` 를 준다. 이를 견디기 위해:
+  - **백엔드**(`usage.rs`): 프로세스 전역 캐시로 짧은 간격(10초) 중복 호출을 합치고,
+    `429` 의 `Retry-After` 동안 네트워크 호출을 멈추고 마지막 값을 stale(`retry_after_secs` 포함)로 반환한다.
+  - **프론트**(`App.tsx`): 고정 `setInterval` 대신 자기-스케줄 타이머로 `Retry-After` 만큼 backoff 후
+    자동 재시도하며, 쿨다운 동안 수동 새로고침을 막고 카운트다운을 표시한다.
+- 새 호출 경로(예: 다른 윈도우·단축키)를 추가하더라도 위 캐시를 거치도록 해 호출 빈도를 낮게 유지할 것.
+
 ## 향후 개발 시 유의 사항
 
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
    - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
-2. **사용량 데이터 수집**: **Claude Code** 는 구현됨 — `usage.rs` 의 `get_claude_usage` 커맨드가
-   OS 키체인(`Claude Code-credentials`)의 OAuth 토큰을 읽어 `GET https://api.anthropic.com/api/oauth/usage`
-   를 직접 호출하고, `utilization` 에서 **잔여 = 100 - utilization** 를 계산해 5시간·주간 윈도우로 반환한다.
-   - 인증: 별도 로그인 없이 이미 로그인된 Claude Code 자격증명을 재사용한다(토큰 갱신은 Claude Code가 담당).
-     토큰 없음/만료 시 "로그인 필요" 메시지를 반환한다. 첫 실행 시 macOS 키체인 접근 허용 프롬프트가 뜰 수 있다.
-   - 폴링 주기는 프론트에서 1~10분으로 조정(localStorage `handobar.intervalMin`).
-   - 이 엔드포인트는 자체 rate limit이 있다. 백엔드는 전역 캐시로 짧은 간격 중복 호출을 합치고,
-     `429` 의 `Retry-After` 동안 호출을 멈추고 마지막 값을 반환하며, 프론트는 그만큼 backoff 후 자동 재시도한다.
-   - 남은 작업: **Codex / Antigravity** 의 사용량 소스를 조사해 같은 방식으로 추가.
+2. **다른 도구 사용량 연동**: **Claude Code** 는 구현 완료([사용량 추적](#사용량-추적-claude-code)).
+   남은 작업은 **Codex / Antigravity** 의 사용량 소스(엔드포인트·인증)를 조사해 같은 구조로 추가하는 것.
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함. `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
 4. **자동 생성/빌드 산출물**: `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 커밋 대상 아님.
