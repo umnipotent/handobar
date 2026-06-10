@@ -28,7 +28,6 @@ export const USAGE_COPY = {
     },
   },
   usage: {
-    remainingLabel: "잔여",
     emptyValue: "—",
   },
   reset: {

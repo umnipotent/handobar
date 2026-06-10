@@ -36,16 +36,8 @@
   font-family: 'Paperlogy', sans-serif;
   font-variant-numeric: tabular-nums;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
 }
 
-.remaining-label {
-  font-size: 12px;
-  font-weight: 500;
-  font-family: 'Pretendard', sans-serif;
-  color: #888;
-}
 
 .remaining.low,
 .remaining.danger {

@@ -1,4 +1,3 @@
-import { USAGE_COPY } from "./copy";
 import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 import { THRESHOLD_DANGER, THRESHOLD_WARNING } from "./config";
@@ -39,7 +38,6 @@ export function WindowCard({ title, hint, data, skeleton = false }: WindowCardPr
         <>
           <div className={`remaining ${statusClass}`}>
             {remaining}%
-            <span className="remaining-label">{USAGE_COPY.usage.remainingLabel}</span>
           </div>
           <div className="bar">
             <div className={`bar-fill ${statusClass}`} style={{ width: `${remaining}%` }} />
