@@ -2,7 +2,6 @@ import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 import { THRESHOLD_DANGER, THRESHOLD_WARNING } from "./config";
 import { USAGE_COPY } from "./copy";
-import { AlertBanner } from "./AlertBanner";
 import "./WindowCard.css";
 
 
@@ -14,9 +13,6 @@ interface WindowCardProps {
   collapsible?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  /** exhausted(0%) 메시지를 닫았는지 여부 */
-  exhaustedDismissed?: boolean;
-  onDismissExhausted?: () => void;
 }
 
 export function WindowCard({
@@ -27,8 +23,6 @@ export function WindowCard({
   collapsible = false,
   collapsed = false,
   onToggleCollapse,
-  exhaustedDismissed = false,
-  onDismissExhausted,
 }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
   const isExhausted = remaining === 0;
@@ -39,10 +33,9 @@ export function WindowCard({
     remaining > THRESHOLD_DANGER;
 
   // data가 없거나 skeleton 중이면 empty 표시
-  // 단, remaining === 0 (완전 고갈)은 data가 있으므로 empty가 아님
   const empty = data === null || skeleton;
 
-  // 리셋 시각: 0%여도 resets_at이 있으면 표시
+  // 리셋 시각: resets_at이 있으면 0%여도 표시
   const resetRelative = data?.resets_at ? formatReset(data.resets_at) : "";
   const resetExact = data?.resets_at ? formatResetExactTime(data.resets_at) : "";
 
@@ -53,7 +46,7 @@ export function WindowCard({
     statusClass = "warning";
   }
 
-  const { emoji, message } = USAGE_COPY.usage.exhausted;
+  const { emoji } = USAGE_COPY.usage.exhausted;
 
   const headContent = (
     <>
@@ -116,18 +109,6 @@ export function WindowCard({
           <div className="bar">
             <div className={`bar-fill ${statusClass}`} style={{ width: `${remaining}%` }} />
           </div>
-
-          {/* exhausted 메시지: 닫기 버튼 포함, 닫힌 상태에서는 숨김 */}
-          {isExhausted && !exhaustedDismissed && (
-            <AlertBanner
-              message={message}
-              type="danger"
-              onDismiss={onDismissExhausted}
-              dismissLabel={USAGE_COPY.dismiss.exhausted}
-            />
-          )}
-
-          {/* 리셋 시각: 0%여도 데이터가 있으면 표시 */}
           {(resetRelative || resetExact) && (
             <div className="reset">
               {resetRelative && <span>{resetRelative}</span>}

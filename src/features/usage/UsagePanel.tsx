@@ -217,9 +217,17 @@ export function UsagePanel({
         hint={USAGE_COPY.windows.fiveHour.hint}
         data={fiveHourData}
         skeleton={showingManualRefreshSkeleton}
-        exhaustedDismissed={fiveHourExhaustedDismissed}
-        onDismissExhausted={() => setFiveHourExhaustedDismissed(true)}
       />
+
+      {/* 5시간 고갈 배너 */}
+      {fiveHourData?.remaining === 0 && !fiveHourExhaustedDismissed && (
+        <AlertBanner
+          message={USAGE_COPY.usage.exhausted.message}
+          type="danger"
+          onDismiss={() => setFiveHourExhaustedDismissed(true)}
+          dismissLabel={USAGE_COPY.dismiss.exhausted}
+        />
+      )}
 
       {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
       <WindowCard
@@ -230,9 +238,17 @@ export function UsagePanel({
         collapsible
         collapsed={sevenDayCollapsed}
         onToggleCollapse={() => toggleSevenDay(!sevenDayCollapsed)}
-        exhaustedDismissed={sevenDayExhaustedDismissed}
-        onDismissExhausted={() => setSevenDayExhaustedDismissed(true)}
       />
+
+      {/* 주간 고갈 배너 */}
+      {sevenDayData?.remaining === 0 && !sevenDayExhaustedDismissed && (
+        <AlertBanner
+          message={USAGE_COPY.usage.exhausted.message}
+          type="danger"
+          onDismiss={() => setSevenDayExhaustedDismissed(true)}
+          dismissLabel={USAGE_COPY.dismiss.exhausted}
+        />
+      )}
 
       <div className="controls">
         <label>

@@ -110,11 +110,6 @@
   transform-origin: center bottom;
 }
 
-/* 카드 내부 AlertBanner (exhausted 등) 상단 여백 */
-.card .alert-banner {
-  margin-top: 10px;
-  margin-bottom: 0;
-}
 
 .remaining.low,
 .remaining.danger {
