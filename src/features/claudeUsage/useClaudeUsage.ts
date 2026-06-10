@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { MAX_INTERVAL, RETRY_BUFFER_SECS } from "./config";
+import {
+  MANUAL_REFRESH_UNLOCK_SECS,
+  MANUAL_REFRESH_SKELETON_MIN_MS,
+  MAX_INTERVAL,
+  RETRY_BUFFER_SECS,
+  RETRY_FALLBACK_SECS,
+} from "./config";
 import { loadIntervalMin, saveIntervalMin } from "./storage";
 import { tauriUsageGateway, type UsageGateway } from "./usageGateway";
 import type { ClaudeUsage } from "./types";
@@ -13,7 +19,11 @@ interface ClaudeUsageState {
   setIntervalMin: (value: number) => void;
   cooldownLeft: number;
   cooling: boolean;
-  refresh: () => void;
+  canManualRefresh: boolean;
+  shouldForceManualRefresh: boolean;
+  dismissCooldown: () => void;
+  showingManualRefreshSkeleton: boolean;
+  refresh: (options?: { force?: boolean; manual?: boolean }) => void;
   intervalOptions: number[];
 }
 
@@ -21,7 +31,15 @@ const intervalOptions = Array.from({ length: MAX_INTERVAL }, (_, i) => i + 1);
 
 function retryAfterFromError(message: string): number | null {
   const match = message.match(/(\d+)\s*초/);
-  return match ? Number(match[1]) : null;
+  if (!match) return null;
+
+  const seconds = Number(match[1]);
+  return seconds > 0 ? seconds : RETRY_FALLBACK_SECS;
+}
+
+function normalizeRetryAfterSecs(seconds: number | undefined): number | null {
+  if (seconds === undefined) return null;
+  return seconds > 0 ? seconds : RETRY_FALLBACK_SECS;
 }
 
 export function useClaudeUsage(
@@ -32,11 +50,14 @@ export function useClaudeUsage(
   const [loading, setLoading] = useState(false);
   const [intervalMin, setIntervalMinState] = useState(loadIntervalMin);
   const [cooldownUntil, setCooldownUntil] = useState(0);
-  const [, forceCooldownTick] = useState(0);
+  const [cooldownStartedAt, setCooldownStartedAt] = useState(0);
+  const [cooldownVisible, setCooldownVisible] = useState(false);
+  const [manualRefreshSkeletonUntil, setManualRefreshSkeletonUntil] = useState(0);
+  const [, forceClockTick] = useState(0);
 
   const intervalRef = useRef(intervalMin);
   const cooldownUntilRef = useRef(cooldownUntil);
-  const refreshRef = useRef<() => void>(() => {});
+  const refreshRef = useRef<(options?: { force?: boolean; manual?: boolean }) => void>(() => {});
   const timer = useRef<number | null>(null);
 
   const schedule = useCallback((secs: number) => {
@@ -44,39 +65,65 @@ export function useClaudeUsage(
     timer.current = window.setTimeout(() => refreshRef.current(), secs * 1000);
   }, []);
 
-  const refresh = useCallback(async () => {
+  const startCooldown = useCallback((seconds: number, visible: boolean) => {
+    setCooldownStartedAt(Date.now());
+    setCooldownUntil(Date.now() + seconds * 1000);
+    setCooldownVisible(visible);
+  }, []);
+
+  const clearCooldown = useCallback(() => {
+    setCooldownStartedAt(0);
+    setCooldownUntil(0);
+    setCooldownVisible(false);
+  }, []);
+
+  const refresh = useCallback(async (options?: { force?: boolean; manual?: boolean }) => {
+    const startedAt = Date.now();
+    const manual = options?.manual === true;
+    const skeletonUntil = startedAt + MANUAL_REFRESH_SKELETON_MIN_MS;
+    if (manual) {
+      setManualRefreshSkeletonUntil(skeletonUntil);
+    }
+
     setLoading(true);
     let nextSecs = intervalRef.current * 60;
 
     try {
-      const nextUsage = await gateway.fetchClaudeUsage();
+      const nextUsage = await gateway.fetchClaudeUsage({ force: options?.force });
       setUsage(nextUsage);
 
-      if (nextUsage.retry_after_secs && nextUsage.retry_after_secs > 0) {
+      const retryAfterSecs = normalizeRetryAfterSecs(nextUsage.retry_after_secs);
+      if (retryAfterSecs !== null) {
         setError(null);
-        setCooldownUntil(Date.now() + nextUsage.retry_after_secs * 1000);
-        nextSecs = nextUsage.retry_after_secs + RETRY_BUFFER_SECS;
+        startCooldown(retryAfterSecs, manual);
+        nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
       } else {
         setError(null);
-        setCooldownUntil(0);
+        clearCooldown();
       }
     } catch (e) {
       const message = String(e);
       const retryAfterSecs = retryAfterFromError(message);
 
-      setError(message);
       if (retryAfterSecs !== null) {
-        setCooldownUntil(Date.now() + retryAfterSecs * 1000);
+        setError(null);
+        startCooldown(retryAfterSecs, manual);
         nextSecs = retryAfterSecs + RETRY_BUFFER_SECS;
+      } else {
+        setError(message);
       }
     } finally {
       setLoading(false);
       schedule(nextSecs);
     }
-  }, [gateway, schedule]);
+  }, [clearCooldown, gateway, schedule, startCooldown]);
 
   const setIntervalMin = useCallback((value: number) => {
     setIntervalMinState(value);
+  }, []);
+
+  const dismissCooldown = useCallback(() => {
+    setCooldownVisible(false);
   }, []);
 
   useEffect(() => {
@@ -108,14 +155,32 @@ export function useClaudeUsage(
 
   useEffect(() => {
     if (cooldownUntil <= Date.now()) return;
-    const id = window.setInterval(() => forceCooldownTick((n) => n + 1), 1000);
+    const id = window.setInterval(() => forceClockTick((n) => n + 1), 1000);
     return () => window.clearInterval(id);
   }, [cooldownUntil]);
 
-  const cooldownLeft = Math.max(
+  useEffect(() => {
+    if (manualRefreshSkeletonUntil <= Date.now()) return;
+    const id = window.setTimeout(
+      () => forceClockTick((n) => n + 1),
+      manualRefreshSkeletonUntil - Date.now(),
+    );
+    return () => window.clearTimeout(id);
+  }, [manualRefreshSkeletonUntil]);
+
+  const internalCooldownLeft = Math.max(
     0,
     Math.ceil((cooldownUntil - Date.now()) / 1000),
   );
+  const cooldownElapsedSecs =
+    cooldownStartedAt > 0 ? Math.floor((Date.now() - cooldownStartedAt) / 1000) : 0;
+  const internalCooling = internalCooldownLeft > 0;
+  const cooling = cooldownVisible && internalCooling;
+  const cooldownLeft = cooling ? internalCooldownLeft : 0;
+  const canManualRefresh =
+    !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
+  const shouldForceManualRefresh = internalCooling && canManualRefresh;
+  const showingManualRefreshSkeleton = manualRefreshSkeletonUntil > Date.now();
 
   return {
     usage,
@@ -124,7 +189,11 @@ export function useClaudeUsage(
     intervalMin,
     setIntervalMin,
     cooldownLeft,
-    cooling: cooldownLeft > 0,
+    cooling,
+    canManualRefresh,
+    shouldForceManualRefresh,
+    dismissCooldown,
+    showingManualRefreshSkeleton,
     refresh,
     intervalOptions,
   };

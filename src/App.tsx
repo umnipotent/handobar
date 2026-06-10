@@ -13,6 +13,10 @@ function App() {
     setIntervalMin,
     cooldownLeft,
     cooling,
+    canManualRefresh,
+    shouldForceManualRefresh,
+    dismissCooldown,
+    showingManualRefreshSkeleton,
     refresh,
     intervalOptions,
   } = useClaudeUsage();
@@ -37,18 +41,30 @@ function App() {
 
       {error && <p className="error">{error}</p>}
       {cooling && (
-        <p className="cooldown">{CLAUDE_USAGE_COPY.cooldownMessage(cooldownLeft)}</p>
+        <div className="cooldown" role="status">
+          <span>{CLAUDE_USAGE_COPY.cooldownMessage(cooldownLeft)}</span>
+          <button
+            className="cooldown-close"
+            type="button"
+            onClick={dismissCooldown}
+            aria-label={CLAUDE_USAGE_COPY.dismissCooldownLabel}
+          >
+            ×
+          </button>
+        </div>
       )}
 
       <WindowCard
         title={CLAUDE_USAGE_COPY.windows.fiveHour.title}
         hint={CLAUDE_USAGE_COPY.windows.fiveHour.hint}
         data={usage?.five_hour ?? null}
+        skeleton={showingManualRefreshSkeleton}
       />
       <WindowCard
         title={CLAUDE_USAGE_COPY.windows.sevenDay.title}
         hint={CLAUDE_USAGE_COPY.windows.sevenDay.hint}
         data={usage?.seven_day ?? null}
+        skeleton={showingManualRefreshSkeleton}
       />
 
       <div className="controls">
@@ -65,11 +81,16 @@ function App() {
             ))}
           </select>
         </label>
-        <button onClick={refresh} disabled={loading || cooling}>
+        <button
+          onClick={() => refresh({ force: shouldForceManualRefresh, manual: true })}
+          disabled={loading || !canManualRefresh}
+        >
           {loading
             ? CLAUDE_USAGE_COPY.controls.loadingButton
             : cooling
-              ? CLAUDE_USAGE_COPY.controls.cooldownButton(cooldownLeft)
+              ? canManualRefresh
+                ? CLAUDE_USAGE_COPY.controls.forceRefreshButton
+                : CLAUDE_USAGE_COPY.controls.cooldownButton(cooldownLeft)
               : CLAUDE_USAGE_COPY.controls.refreshButton}
         </button>
       </div>

@@ -2,6 +2,7 @@ export const CLAUDE_USAGE_COPY = {
   appTitle: "Claude Code",
   lastRefreshLabel: "마지막 갱신",
   cooldownMessage: (seconds: number) => `요청 제한 중 · ${seconds}초 후 자동 재시도`,
+  dismissCooldownLabel: "요청 제한 메시지 닫기",
   windows: {
     fiveHour: {
       title: "최근 5시간",
@@ -14,6 +15,7 @@ export const CLAUDE_USAGE_COPY = {
   },
   usage: {
     remainingLabel: "잔여",
+    emptyValue: "—",
   },
   reset: {
     soon: "곧 리셋",
@@ -27,6 +29,7 @@ export const CLAUDE_USAGE_COPY = {
     minuteOption: (minutes: number) => `${minutes}분`,
     loadingButton: "불러오는 중…",
     refreshButton: "새로고침",
+    forceRefreshButton: "강제 새로고침",
     cooldownButton: (seconds: number) => `${seconds}초`,
   },
 } as const;

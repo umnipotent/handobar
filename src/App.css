@@ -61,6 +61,12 @@ h1 {
   margin-bottom: 12px;
 }
 
+.card.empty {
+  color: #999;
+  background: #fbfbfc;
+  border-color: #e4e4e7;
+}
+
 .card-head {
   display: flex;
   align-items: baseline;
@@ -111,6 +117,10 @@ h1 {
   transition: width 0.3s ease;
 }
 
+.bar-fill.skeleton {
+  background: linear-gradient(90deg, #ececef 0%, #f7f7f8 48%, #ececef 100%);
+}
+
 .bar-fill.low {
   background: #c0392b;
 }
@@ -126,6 +136,17 @@ h1 {
 
 .reset time {
   color: #444;
+}
+
+.skeleton-line {
+  width: 210px;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ececef 0%, #f7f7f8 48%, #ececef 100%);
+}
+
+.skeleton-line.short {
+  width: 170px;
 }
 
 .error {
@@ -145,6 +166,26 @@ h1 {
   color: #8a5a00;
   background: #fff4d6;
   border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cooldown-close {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #8a5a00;
+  background: transparent;
+  line-height: 20px;
+  flex: 0 0 auto;
+}
+
+.cooldown-close:hover:not(:disabled) {
+  background: rgba(138, 90, 0, 0.12);
 }
 
 .controls {
