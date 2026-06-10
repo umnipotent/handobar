@@ -55,7 +55,7 @@ pnpm test             # 프론트엔드 React/TS 유닛 테스트 실행 (Vitest
 src-tauri/
 ├─ src/
 │  ├─ lib.rs          # 앱 빌더 + 트레이 구성 + 커맨드 등록(invoke_handler)
-│  ├─ usage.rs        # Claude Code 잔여 사용량 fetch  → [claude-usage] 스킬
+│  ├─ usage/          # provider별 잔여 사용량(claude/codex) + 공유 코어  → [usage] 스킬
 │  └─ main.rs         # 바이너리 진입점 → handobar_lib::run()
 ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar, version)
 ├─ capabilities/      # 권한(ACL) 정의 (default.json)
@@ -122,8 +122,8 @@ codesign -d --requirements - <바이너리>              # designated => ... cer
 
 ## 연관 스킬
 
-- [`claude-usage`](../claude-usage/SKILL.md): 이 기능이 올라가는 커맨드 등록 / invoke / ACL 일반 패턴.
-  키체인에서 읽는 토큰이 코드 서명 프롬프트의 대상이다.
+- [`usage`](../usage/SKILL.md): provider별 잔여 사용량 추적이 이 커맨드 등록 / invoke / ACL 패턴 위에 올라간다.
+  키체인에서 읽는 Claude 토큰이 코드 서명 프롬프트의 대상이다.
 - [`version-bump`](../version-bump/SKILL.md): `tauri.conf.json` · `Cargo.toml` 의 `version` 동기화.
 
 ## 유닛 테스트 (Unit Testing)
@@ -131,7 +131,7 @@ codesign -d --requirements - <바이너리>              # designated => ... cer
 handobar 프로젝트는 백엔드(Rust)와 프론트엔드(React/TS) 모두에 대해 합리적이고 신뢰할 수 있는 유닛 테스트를 지향한다.
 
 ### 1. 백엔드 테스트 (Rust)
-- **테스트 대상**: 상태 비저장 변환 로직([models.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/models.rs)) 및 글로벌 뮤텍스를 활용하는 내부 캐시 흐름([cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs)).
+- **테스트 대상**: 상태 비저장 변환 로직([model.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/model.rs)) 및 글로벌 뮤텍스를 활용하는 내부 캐시 흐름([cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs)). 자세한 provider별 구성은 [`usage`](../usage/SKILL.md) 스킬.
 - **실행 방법**: `cargo test` (또는 `cargo test --manifest-path src-tauri/Cargo.toml`)
 - **가이드라인**:
   - 파일 하단에 `#[cfg(test)] mod tests` 모듈을 정의하여 유닛 테스트를 작성한다.
@@ -139,7 +139,7 @@ handobar 프로젝트는 백엔드(Rust)와 프론트엔드(React/TS) 모두에 
   - 외부 API 호출이나 암호화 키체인 등 네이티브 시스템 자원은 테스트 대상에서 격리하고 순수 가공 로직 위주로 검증한다.
 
 ### 2. 프론트엔드 테스트 (Vitest)
-- **테스트 대상**: 날짜 및 시간 포맷팅 변환 로직([format.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/format.ts)), localStorage 제어 및 범위 보정([storage.ts](file:///Users/morgan/Development/handobar/src/features/claudeUsage/storage.ts)).
+- **테스트 대상**: 날짜 및 시간 포맷팅 변환 로직([format.ts](file:///Users/morgan/Development/handobar/src/features/usage/format.ts)), localStorage 제어 및 범위 보정([storage.ts](file:///Users/morgan/Development/handobar/src/features/usage/storage.ts)).
 - **실행 방법**: `pnpm test` (또는 `npx vitest run`)
 - **가이드라인**:
   - 각 기능 폴더에 `<파일명>.test.ts` 형식의 테스트 파일을 작성한다.
