@@ -20,7 +20,13 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
     }
 
     let creds = read_credentials()?;
-    if creds.expires_at < chrono::Utc::now().timestamp_millis() {
+    let expires_at_ms = if creds.expires_at < 10_000_000_000 {
+        creds.expires_at * 1000
+    } else {
+        creds.expires_at
+    };
+
+    if expires_at_ms < chrono::Utc::now().timestamp_millis() {
         return Err(messages::LOGIN_EXPIRED.to_string());
     }
 
