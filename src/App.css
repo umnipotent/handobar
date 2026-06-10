@@ -339,24 +339,9 @@ button:disabled {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10.5px;
   color: #333;
-  cursor: pointer;
   border: 1px solid #e1e1e3;
-  transition: background 0.15s ease;
 }
 
-.meta-code:hover {
-  background: #ebebee;
-}
-
-.meta-code.copied {
-  background: #efeaff;
-  color: #6b4eff;
-  border-color: #dcd3ff;
-}
-
-.meta-code.copied:hover {
-  background: #e5ddff;
-}
 
 
 .meta-link-btn {
