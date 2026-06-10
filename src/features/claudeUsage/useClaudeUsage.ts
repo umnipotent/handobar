@@ -52,13 +52,14 @@ export function useClaudeUsage(
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [cooldownStartedAt, setCooldownStartedAt] = useState(0);
   const [cooldownVisible, setCooldownVisible] = useState(false);
-  const [manualRefreshSkeletonUntil, setManualRefreshSkeletonUntil] = useState(0);
+  const [showingManualRefreshSkeleton, setShowingManualRefreshSkeleton] = useState(false);
   const [, forceClockTick] = useState(0);
 
   const intervalRef = useRef(intervalMin);
   const cooldownUntilRef = useRef(cooldownUntil);
   const refreshRef = useRef<(options?: { force?: boolean; manual?: boolean }) => void>(() => {});
   const timer = useRef<number | null>(null);
+  const manualSkeletonTimer = useRef<number | null>(null);
 
   const schedule = useCallback((secs: number) => {
     if (timer.current !== null) window.clearTimeout(timer.current);
@@ -78,11 +79,16 @@ export function useClaudeUsage(
   }, []);
 
   const refresh = useCallback(async (options?: { force?: boolean; manual?: boolean }) => {
-    const startedAt = Date.now();
     const manual = options?.manual === true;
-    const skeletonUntil = startedAt + MANUAL_REFRESH_SKELETON_MIN_MS;
     if (manual) {
-      setManualRefreshSkeletonUntil(skeletonUntil);
+      if (manualSkeletonTimer.current !== null) {
+        window.clearTimeout(manualSkeletonTimer.current);
+      }
+      setShowingManualRefreshSkeleton(true);
+      manualSkeletonTimer.current = window.setTimeout(() => {
+        setShowingManualRefreshSkeleton(false);
+        manualSkeletonTimer.current = null;
+      }, MANUAL_REFRESH_SKELETON_MIN_MS);
     }
 
     setLoading(true);
@@ -139,6 +145,9 @@ export function useClaudeUsage(
 
     return () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
+      if (manualSkeletonTimer.current !== null) {
+        window.clearTimeout(manualSkeletonTimer.current);
+      }
       unlisten.then((fn) => fn());
     };
   }, [refresh]);
@@ -159,15 +168,6 @@ export function useClaudeUsage(
     return () => window.clearInterval(id);
   }, [cooldownUntil]);
 
-  useEffect(() => {
-    if (manualRefreshSkeletonUntil <= Date.now()) return;
-    const id = window.setTimeout(
-      () => forceClockTick((n) => n + 1),
-      manualRefreshSkeletonUntil - Date.now(),
-    );
-    return () => window.clearTimeout(id);
-  }, [manualRefreshSkeletonUntil]);
-
   const internalCooldownLeft = Math.max(
     0,
     Math.ceil((cooldownUntil - Date.now()) / 1000),
@@ -180,7 +180,6 @@ export function useClaudeUsage(
   const canManualRefresh =
     !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
   const shouldForceManualRefresh = internalCooling && canManualRefresh;
-  const showingManualRefreshSkeleton = manualRefreshSkeletonUntil > Date.now();
 
   return {
     usage,

@@ -13,6 +13,7 @@ export function WindowCard({ title, hint, data, skeleton = false }: WindowCardPr
   const remaining = data ? Math.round(data.remaining) : null;
   const low = remaining !== null && remaining <= 15;
   const empty = data === null || skeleton;
+  const showValue = data !== null && !skeleton;
   const resetRelative = data ? formatReset(data.resets_at) : "";
   const resetExact = data ? formatResetExactTime(data.resets_at) : "";
 
@@ -23,13 +24,13 @@ export function WindowCard({ title, hint, data, skeleton = false }: WindowCardPr
         <span className="hint">{hint}</span>
       </div>
       <div className={`remaining ${low ? "low" : ""}`}>
-        {remaining !== null ? `${remaining}%` : CLAUDE_USAGE_COPY.usage.emptyValue}
+        {showValue ? `${remaining}%` : CLAUDE_USAGE_COPY.usage.emptyValue}
         <span className="remaining-label">{CLAUDE_USAGE_COPY.usage.remainingLabel}</span>
       </div>
       <div className="bar">
         <div
           className={`bar-fill ${low ? "low" : ""} ${empty ? "skeleton" : ""}`}
-          style={{ width: `${remaining ?? 100}%` }}
+          style={{ width: `${showValue ? remaining : 100}%` }}
         />
       </div>
       <div className="reset">
