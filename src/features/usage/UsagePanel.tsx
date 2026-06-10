@@ -1,3 +1,4 @@
+import { open } from "@tauri-apps/plugin-opener";
 import { USAGE_COPY } from "./copy";
 import { formatKstIsoWithoutTimezone } from "./format";
 import type { UsageGateway } from "./gateway";
@@ -10,10 +11,12 @@ export interface UsageProvider {
   title: string;
   gateway: UsageGateway;
   storageKey: string;
+  cliCmd?: string;
+  webUrl?: string;
 }
 
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
-export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
+export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: UsageProvider) {
   const {
     usage,
     error,
@@ -34,6 +37,15 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
     dismissSubModelWarning,
     dismissError,
   } = useUsage(gateway, storageKey);
+
+  const handleOpenUrl = async (url: string) => {
+    try {
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  };
+
 
   return (
     <section className="panel">
@@ -125,6 +137,36 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
               : USAGE_COPY.controls.refreshButton}
         </button>
       </div>
+
+      {(cliCmd || webUrl) && (
+        <div className="provider-meta">
+          {cliCmd && (
+            <div className="meta-item">
+              <span className="meta-label">CLI</span>
+              <code
+                className="meta-code"
+                onClick={() => navigator.clipboard.writeText(cliCmd)}
+                title="클릭하여 복사"
+              >
+                {cliCmd}
+              </code>
+            </div>
+          )}
+          {webUrl && (
+            <div className="meta-item">
+              <span className="meta-label">Web</span>
+              <button
+                type="button"
+                className="meta-link-btn"
+                onClick={() => handleOpenUrl(webUrl)}
+              >
+                {webUrl.replace(/^https?:\/\//, "")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
+
