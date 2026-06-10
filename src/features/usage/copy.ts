@@ -13,6 +13,7 @@ export const USAGE_COPY = {
   dismiss: {
     error: "에러 메시지 닫기",
     warning: "경고 닫기",
+    exhausted: "메시지 닫기",
   },
   meta: {
     directView: "사용량 웹에서 보기",

@@ -110,12 +110,10 @@
   transform-origin: center bottom;
 }
 
-.exhausted-message {
-  margin: 8px 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-danger);
-  font-weight: var(--font-weight-medium);
-  opacity: 0.85;
+/* 카드 내부 AlertBanner (exhausted 등) 상단 여백 */
+.card .alert-banner {
+  margin-top: 10px;
+  margin-bottom: 0;
 }
 
 .remaining.low,

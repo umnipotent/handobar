@@ -39,3 +39,14 @@ export function loadPanelOrder<T extends string>(defaultOrder: readonly T[]): T[
 export function savePanelOrder(order: readonly string[]): void {
   localStorage.setItem(PANEL_ORDER_STORAGE_KEY, JSON.stringify(order));
 }
+
+// 카드 접기 상태 (주간 등). key는 provider + 카드 식별자로 구성.
+export function loadCollapsed(key: string, defaultValue = false): boolean {
+  const stored = localStorage.getItem(key);
+  if (stored === null) return defaultValue;
+  return stored === "1";
+}
+
+export function saveCollapsed(key: string, collapsed: boolean): void {
+  localStorage.setItem(key, collapsed ? "1" : "0");
+}

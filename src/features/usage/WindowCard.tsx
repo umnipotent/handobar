@@ -2,6 +2,7 @@ import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 import { THRESHOLD_DANGER, THRESHOLD_WARNING } from "./config";
 import { USAGE_COPY } from "./copy";
+import { AlertBanner } from "./AlertBanner";
 import "./WindowCard.css";
 
 
@@ -13,6 +14,9 @@ interface WindowCardProps {
   collapsible?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  /** exhausted(0%) 메시지를 닫았는지 여부 */
+  exhaustedDismissed?: boolean;
+  onDismissExhausted?: () => void;
 }
 
 export function WindowCard({
@@ -23,6 +27,8 @@ export function WindowCard({
   collapsible = false,
   collapsed = false,
   onToggleCollapse,
+  exhaustedDismissed = false,
+  onDismissExhausted,
 }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
   const isExhausted = remaining === 0;
@@ -35,8 +41,10 @@ export function WindowCard({
   // data가 없거나 skeleton 중이면 empty 표시
   // 단, remaining === 0 (완전 고갈)은 data가 있으므로 empty가 아님
   const empty = data === null || skeleton;
-  const resetRelative = data ? formatReset(data.resets_at) : "";
-  const resetExact = data ? formatResetExactTime(data.resets_at) : "";
+
+  // 리셋 시각: 0%여도 resets_at이 있으면 표시
+  const resetRelative = data?.resets_at ? formatReset(data.resets_at) : "";
+  const resetExact = data?.resets_at ? formatResetExactTime(data.resets_at) : "";
 
   let statusClass = "";
   if (isDanger) {
@@ -73,7 +81,16 @@ export function WindowCard({
   );
 
   return (
-    <section className={`card ${empty ? "empty" : ""} ${collapsed ? "card-collapsed" : ""} ${isExhausted ? "exhausted" : ""}`}>
+    <section
+      className={[
+        "card",
+        empty ? "empty" : "",
+        collapsed ? "card-collapsed" : "",
+        isExhausted ? "exhausted" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {collapsible ? (
         <button
           type="button"
@@ -99,13 +116,26 @@ export function WindowCard({
           <div className="bar">
             <div className={`bar-fill ${statusClass}`} style={{ width: `${remaining}%` }} />
           </div>
-          {isExhausted && (
-            <p className="exhausted-message">{message}</p>
+
+          {/* exhausted 메시지: 닫기 버튼 포함, 닫힌 상태에서는 숨김 */}
+          {isExhausted && !exhaustedDismissed && (
+            <AlertBanner
+              message={message}
+              type="danger"
+              onDismiss={onDismissExhausted}
+              dismissLabel={USAGE_COPY.dismiss.exhausted}
+            />
           )}
-          <div className="reset">
-            {resetRelative && <span>{resetRelative}</span>}
-            {resetExact && <time dateTime={data!.resets_at}>{resetExact}</time>}
-          </div>
+
+          {/* 리셋 시각: 0%여도 데이터가 있으면 표시 */}
+          {(resetRelative || resetExact) && (
+            <div className="reset">
+              {resetRelative && <span>{resetRelative}</span>}
+              {resetExact && data?.resets_at && (
+                <time dateTime={data.resets_at}>{resetExact}</time>
+              )}
+            </div>
+          )}
         </>
       )}
     </section>

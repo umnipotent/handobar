@@ -7,6 +7,7 @@ import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
 import { AlertBanner } from "./AlertBanner";
 import type { UsageWindow } from "./types";
+import { loadCollapsed, saveCollapsed } from "./storage";
 import "./UsagePanel.css";
 
 export interface UsageProvider {
@@ -97,7 +98,28 @@ export function UsagePanel({
     dismissError,
   } = useUsage(gateway, storageKey);
 
-  const [sevenDayCollapsed, setSevenDayCollapsed] = useState(false);
+  const [sevenDayCollapsed, setSevenDayCollapsed] = useState(() =>
+    loadCollapsed(`${storageKey}.sevenDay.collapsed`)
+  );
+
+  // exhausted 메시지 닫기 상태. 사용량이 0%→양수로 회복되면 자동 리셋.
+  const fiveHourRemaining = usage?.five_hour?.remaining ?? (usage != null ? 0 : null);
+  const sevenDayRemaining = usage?.seven_day?.remaining ?? (usage != null ? 0 : null);
+  const [fiveHourExhaustedDismissed, setFiveHourExhaustedDismissed] = useState(false);
+  const [sevenDayExhaustedDismissed, setSevenDayExhaustedDismissed] = useState(false);
+
+  // 잔여가 0%를 벗어나면 dismiss 상태 초기화 (다음 번 0% 도달 시 다시 표시)
+  if (fiveHourRemaining !== null && fiveHourRemaining > 0 && fiveHourExhaustedDismissed) {
+    setFiveHourExhaustedDismissed(false);
+  }
+  if (sevenDayRemaining !== null && sevenDayRemaining > 0 && sevenDayExhaustedDismissed) {
+    setSevenDayExhaustedDismissed(false);
+  }
+
+  const toggleSevenDay = (next: boolean) => {
+    setSevenDayCollapsed(next);
+    saveCollapsed(`${storageKey}.sevenDay.collapsed`, next);
+  };
 
   const hasUsage = usage != null;
   const fiveHourData = resolveWindow(usage?.five_hour, hasUsage);
@@ -195,9 +217,11 @@ export function UsagePanel({
         hint={USAGE_COPY.windows.fiveHour.hint}
         data={fiveHourData}
         skeleton={showingManualRefreshSkeleton}
+        exhaustedDismissed={fiveHourExhaustedDismissed}
+        onDismissExhausted={() => setFiveHourExhaustedDismissed(true)}
       />
 
-      {/* 주간 카드: 헤더 클릭으로 접기/펼치기 */}
+      {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
       <WindowCard
         title={USAGE_COPY.windows.sevenDay.title}
         hint={USAGE_COPY.windows.sevenDay.hint}
@@ -205,7 +229,9 @@ export function UsagePanel({
         skeleton={showingManualRefreshSkeleton}
         collapsible
         collapsed={sevenDayCollapsed}
-        onToggleCollapse={() => setSevenDayCollapsed((v) => !v)}
+        onToggleCollapse={() => toggleSevenDay(!sevenDayCollapsed)}
+        exhaustedDismissed={sevenDayExhaustedDismissed}
+        onDismissExhausted={() => setSevenDayExhaustedDismissed(true)}
       />
 
       <div className="controls">
