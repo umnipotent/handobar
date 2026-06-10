@@ -35,6 +35,26 @@ function DragHandleIcon() {
   );
 }
 
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M23 4v6h-6" />
+      <path d="M1 20v-6h6" />
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  );
+}
+
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
 export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider) {
   const {
@@ -166,9 +186,12 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
           </select>
         </label>
         <button
+          type="button"
+          className="refresh-btn"
           onClick={() => refresh({ force: shouldForceManualRefresh, manual: true })}
           disabled={loading || !canManualRefresh}
         >
+          <RefreshIcon className={`refresh-icon ${loading ? "spinning" : ""}`} />
           {loading
             ? USAGE_COPY.controls.loadingButton
             : cooling
