@@ -29,7 +29,9 @@ export interface UsageState {
   dismissFastModeWarning: () => void;
   showingSubModelWarning: boolean;
   dismissSubModelWarning: () => void;
+  dismissError: () => void;
 }
+
 
 const intervalOptions = Array.from({ length: MAX_INTERVAL }, (_, i) => i + 1);
 
@@ -215,6 +217,10 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
     setSubModelWarningDismissed(true);
   }, []);
 
+  const dismissError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     usage,
     error,
@@ -233,5 +239,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
     dismissFastModeWarning,
     showingSubModelWarning,
     dismissSubModelWarning,
+    dismissError,
   };
 }
+

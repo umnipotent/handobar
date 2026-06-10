@@ -3,6 +3,7 @@ import { formatKstIsoWithoutTimezone } from "./format";
 import type { UsageGateway } from "./gateway";
 import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
+import { AlertBanner } from "./AlertBanner";
 
 export interface UsageProvider {
   id: string;
@@ -31,13 +32,19 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
     dismissFastModeWarning,
     showingSubModelWarning,
     dismissSubModelWarning,
+    dismissError,
   } = useUsage(gateway, storageKey);
 
   return (
     <section className="panel">
       <header className="top">
         <h2>{title}</h2>
-        {usage?.subscription && <span className="badge">{usage.subscription}</span>}
+        {(usage?.model || usage?.subscription) && (
+          <div className="header-badges">
+            {usage?.model && <span className="badge model-badge">{usage.model}</span>}
+            {usage?.subscription && <span className="badge">{usage.subscription}</span>}
+          </div>
+        )}
       </header>
 
       {usage?.fetched_at && (
@@ -47,46 +54,39 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
         </p>
       )}
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <AlertBanner
+          message={error}
+          type="danger"
+          onDismiss={dismissError}
+          dismissLabel="에러 메시지 닫기"
+        />
+      )}
       {cooling && (
-        <div className="cooldown" role="status">
-          <span>{USAGE_COPY.cooldownMessage(cooldownLeft)}</span>
-          <button
-            className="cooldown-close"
-            type="button"
-            onClick={dismissCooldown}
-            aria-label={USAGE_COPY.dismissCooldownLabel}
-          >
-            ×
-          </button>
-        </div>
+        <AlertBanner
+          message={USAGE_COPY.cooldownMessage(cooldownLeft)}
+          type="warning"
+          onDismiss={dismissCooldown}
+          dismissLabel={USAGE_COPY.dismissCooldownLabel}
+        />
       )}
       {showingFastModeWarning && (
-        <div className="fast-mode-warning" role="status">
-          <span>fast mode를 꺼주세요</span>
-          <button
-            className="fast-mode-warning-close"
-            type="button"
-            onClick={dismissFastModeWarning}
-            aria-label="경고 닫기"
-          >
-            ×
-          </button>
-        </div>
+        <AlertBanner
+          message="fast mode를 꺼주세요"
+          type="danger"
+          onDismiss={dismissFastModeWarning}
+          dismissLabel="경고 닫기"
+        />
       )}
       {showingSubModelWarning && (
-        <div className="sub-model-warning" role="status">
-          <span>하위 모델 전환을 추천합니다</span>
-          <button
-            className="sub-model-warning-close"
-            type="button"
-            onClick={dismissSubModelWarning}
-            aria-label="경고 닫기"
-          >
-            ×
-          </button>
-        </div>
+        <AlertBanner
+          message="하위 모델 전환을 추천합니다"
+          type="danger"
+          onDismiss={dismissSubModelWarning}
+          dismissLabel="경고 닫기"
+        />
       )}
+
 
       <WindowCard
         title={USAGE_COPY.windows.fiveHour.title}

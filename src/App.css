@@ -89,6 +89,19 @@ h2 {
   border-radius: 999px;
 }
 
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge.model-badge {
+  color: #555;
+  background: #eef0f2;
+  text-transform: none;
+}
+
+
 .last-refresh {
   margin: -6px 0 12px;
   font-size: 11px;
@@ -207,44 +220,54 @@ h2 {
   width: 170px;
 }
 
-.error {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: #8a2a1d;
-  background: #fdecea;
-  border-radius: 10px;
-  line-height: 1.4;
-}
-
-.cooldown {
+.alert-banner {
   margin: 0 0 12px;
   padding: 8px 12px;
   font-size: 12px;
-  color: #8a5a00;
-  background: #fff4d6;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
-.cooldown-close {
+.alert-banner.danger {
+  color: #8a2a1d;
+  background: #fdecea;
+}
+
+.alert-banner.warning {
+  color: #8a5a00;
+  background: #fff4d6;
+}
+
+.alert-banner-close {
   width: 20px;
   height: 20px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: #8a5a00;
+  color: inherit;
   background: transparent;
   line-height: 20px;
   flex: 0 0 auto;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cooldown-close:hover:not(:disabled) {
+.alert-banner.danger .alert-banner-close:hover {
+  background: rgba(138, 42, 29, 0.12);
+}
+
+.alert-banner.warning .alert-banner-close:hover {
   background: rgba(138, 90, 0, 0.12);
 }
+
 
 .controls {
   display: flex;
@@ -286,38 +309,5 @@ button:disabled {
   cursor: default;
 }
 
-.fast-mode-warning,
-.sub-model-warning {
-  margin: 0 0 12px;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: #8a2a1d;
-  background: #fdecea;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-weight: 500;
-}
 
-.fast-mode-warning-close,
-.sub-model-warning-close {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  color: #8a2a1d;
-  background: transparent;
-  line-height: 20px;
-  flex: 0 0 auto;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.fast-mode-warning-close:hover,
-.sub-model-warning-close:hover {
-  background: rgba(138, 42, 29, 0.12);
-}
 

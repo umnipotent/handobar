@@ -167,12 +167,34 @@ fn read_subscription_from_auth() -> Option<String> {
     Some(plan.to_string())
 }
 
+fn read_codex_model() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let config_path = PathBuf::from(home).join(".codex").join("config.toml");
+    if !config_path.is_file() {
+        return None;
+    }
+    let content = fs::read_to_string(config_path).ok()?;
+    for line in content.lines() {
+        let line = line.trim();
+        if line.starts_with("model") {
+            let parts: Vec<&str> = line.split('=').collect();
+            if parts.len() >= 2 {
+                let model_val = parts[1].trim().trim_matches('"').trim_matches('\'').to_string();
+                return Some(model_val);
+            }
+        }
+    }
+    None
+}
+
 fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
     let subscription = read_subscription_from_auth();
+    let model = read_codex_model();
     UsageSnapshot {
         five_hour: limits.primary.and_then(to_window),
         seven_day: limits.secondary.and_then(to_window),
         subscription,
+        model,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
     }

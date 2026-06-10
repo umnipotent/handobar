@@ -33,6 +33,7 @@ pub struct UsageSnapshot {
     pub five_hour: Option<UsageWindow>,
     pub seven_day: Option<UsageWindow>,
     pub subscription: Option<String>,
+    pub model: Option<String>,
     /// fetch 시각(RFC3339).
     pub fetched_at: String,
     /// rate limit 중이면 남은 대기 초(있을 때만 직렬화). Codex는 항상 `None`.

@@ -12,6 +12,22 @@ use credentials::read_credentials;
 use crate::usage::cache::{self, FetchDecision, CLAUDE_CACHE};
 use crate::usage::model::UsageSnapshot;
 
+#[derive(serde::Deserialize)]
+struct ClaudeSettings {
+    model: Option<String>,
+}
+
+fn read_claude_model() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let settings_path = std::path::PathBuf::from(home).join(".claude").join("settings.json");
+    if !settings_path.is_file() {
+        return None;
+    }
+    let content = std::fs::read_to_string(settings_path).ok()?;
+    let settings: ClaudeSettings = serde_json::from_str(&content).ok()?;
+    settings.model
+}
+
 pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, String> {
     if !force {
         if let FetchDecision::UseCached(usage) = cache::before_fetch(&CLAUDE_CACHE)? {
@@ -42,6 +58,7 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
         five_hour: windows.five_hour,
         seven_day: windows.seven_day,
         subscription: creds.subscription_type,
+        model: read_claude_model(),
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
     };

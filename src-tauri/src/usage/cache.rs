@@ -121,10 +121,12 @@ mod tests {
             }),
             seven_day: None,
             subscription: Some("pro".to_string()),
+            model: None,
             fetched_at: "2026-06-10T14:00:00Z".to_string(),
             retry_after_secs: None,
         }
     }
+
 
     #[test]
     fn test_cache_flow() {

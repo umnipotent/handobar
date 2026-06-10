@@ -9,6 +9,8 @@ export interface Usage {
   five_hour: UsageWindow | null;
   seven_day: UsageWindow | null;
   subscription: string | null;
+  model: string | null;
   fetched_at: string;
   retry_after_secs?: number;
 }
+
