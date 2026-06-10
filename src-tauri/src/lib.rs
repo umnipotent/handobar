@@ -1,3 +1,4 @@
+mod labels;
 mod usage;
 
 use tauri::{
@@ -17,15 +18,15 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            let show_item = MenuItem::with_id(app, "show", "Show App", true, None::<&str>)?;
+            let show_item = MenuItem::with_id(app, "show", labels::SHOW_APP, true, None::<&str>)?;
             let refresh_item =
-                MenuItem::with_id(app, "refresh", "Refresh Usage", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                MenuItem::with_id(app, "refresh", labels::REFRESH_USAGE, true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", labels::QUIT, true, None::<&str>)?;
 
             let menu = Menu::with_items(app, &[&show_item, &refresh_item, &quit_item])?;
 
             let _tray = TrayIconBuilder::with_id("main-tray")
-                .tooltip("AI Usage Monitor")
+                .tooltip(labels::TRAY_TOOLTIP)
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(true)
