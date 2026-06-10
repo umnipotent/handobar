@@ -4,6 +4,10 @@ pub(super) fn rate_limited(retry_after: u64) -> String {
     format!("요청이 제한되었습니다(429). {retry_after}초 후 자동으로 다시 시도합니다.")
 }
 
+pub(super) fn response_read_failed(error: impl std::fmt::Display) -> String {
+    format!("응답 body 읽기 실패: {error}")
+}
+
 pub(super) fn response_parse_failed(error: impl std::fmt::Display) -> String {
     format!("응답 파싱 실패: {error}")
 }

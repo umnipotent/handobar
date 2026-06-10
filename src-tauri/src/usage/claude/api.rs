@@ -14,19 +14,32 @@ const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
 const OAUTH_BETA: &str = "oauth-2025-04-20";
 pub(super) const DEFAULT_RETRY_SECS: u64 = 60;
 
+// API 응답에서 사용하는 User-Agent (429 방지).
+const USER_AGENT: &str = "claude-code/1.0.0";
+
 /// 엔드포인트 응답의 한 윈도우(사용률 기반).
+/// `utilization`이 null로 내려오는 경우(e.g. extra_usage)를 Option으로 수용.
 #[derive(Deserialize, Debug)]
 struct ApiWindow {
-    utilization: f64,
-    resets_at: String,
+    utilization: Option<f64>,
+    resets_at: Option<String>,
 }
 
-impl From<ApiWindow> for UsageWindow {
-    fn from(w: ApiWindow) -> Self {
-        UsageWindow::from_used_percent(w.utilization, w.resets_at)
+impl TryFrom<ApiWindow> for UsageWindow {
+    type Error = ();
+
+    fn try_from(w: ApiWindow) -> Result<Self, Self::Error> {
+        match (w.utilization, w.resets_at) {
+            (Some(utilization), Some(resets_at)) => {
+                Ok(UsageWindow::from_used_percent(utilization, resets_at))
+            }
+            _ => Err(()),
+        }
     }
 }
 
+/// API 최상위 응답 구조.
+/// `#[serde(deny_unknown_fields)]` 를 쓰지 않아 미지 필드(extra_usage 등)가 추가돼도 파싱 실패 없음.
 #[derive(Deserialize, Debug)]
 struct ApiUsage {
     five_hour: Option<ApiWindow>,
@@ -59,6 +72,7 @@ pub(super) async fn fetch_usage(access_token: &str) -> Result<UsageWindows, Usag
         .bearer_auth(access_token)
         .header("anthropic-beta", OAUTH_BETA)
         .header("Content-Type", "application/json")
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
         .timeout(Duration::from_secs(10))
         .send()
         .await
@@ -76,14 +90,20 @@ pub(super) async fn fetch_usage(access_token: &str) -> Result<UsageWindows, Usag
         return Err(UsageApiError::Message(messages::api_error(resp.status())));
     }
 
-    let api: ApiUsage = resp
-        .json()
+    // 파싱 실패 시 원본 body를 로그에 남겨 디버깅을 돕는다.
+    let body = resp
+        .text()
         .await
-        .map_err(|e| UsageApiError::Message(shared::response_parse_failed(e)))?;
+        .map_err(|e| UsageApiError::Message(shared::response_read_failed(e)))?;
+
+    let api: ApiUsage = serde_json::from_str(&body).map_err(|e| {
+        eprintln!("[handobar][claude] 응답 파싱 실패. body={body}");
+        UsageApiError::Message(shared::response_parse_failed(e))
+    })?;
 
     Ok(UsageWindows {
-        five_hour: api.five_hour.map(UsageWindow::from),
-        seven_day: api.seven_day.map(UsageWindow::from),
+        five_hour: api.five_hour.and_then(|w| UsageWindow::try_from(w).ok()),
+        seven_day: api.seven_day.and_then(|w| UsageWindow::try_from(w).ok()),
     })
 }
 
@@ -107,11 +127,36 @@ mod tests {
 
     #[test]
     fn api_window_maps_to_remaining() {
-        let w = UsageWindow::from(ApiWindow {
-            utilization: 28.0,
-            resets_at: "2026-06-10T08:50:01Z".to_string(),
-        });
+        let w = UsageWindow::try_from(ApiWindow {
+            utilization: Some(28.0),
+            resets_at: Some("2026-06-10T08:50:01Z".to_string()),
+        })
+        .unwrap();
         assert_eq!(w.used, 28.0);
         assert_eq!(w.remaining, 72.0);
+    }
+
+    #[test]
+    fn api_window_null_utilization_returns_err() {
+        let result = UsageWindow::try_from(ApiWindow {
+            utilization: None,
+            resets_at: Some("2026-06-10T08:50:01Z".to_string()),
+        });
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn api_usage_ignores_extra_fields() {
+        // extra_usage 같은 미지 필드가 포함된 응답도 파싱 성공해야 한다.
+        let json = r#"{
+            "five_hour": {"utilization": 33.0, "resets_at": "2026-04-11T07:00:00Z"},
+            "seven_day": {"utilization": 13.0, "resets_at": "2026-04-17T00:59:59Z"},
+            "seven_day_opus": null,
+            "seven_day_sonnet": {"utilization": 1.0, "resets_at": "2026-04-16T03:00:00Z"},
+            "extra_usage": {"is_enabled": false, "monthly_limit": null, "used_credits": null, "utilization": null}
+        }"#;
+        let api: ApiUsage = serde_json::from_str(json).expect("파싱 성공해야 함");
+        assert!(api.five_hour.is_some());
+        assert!(api.seven_day.is_some());
     }
 }
