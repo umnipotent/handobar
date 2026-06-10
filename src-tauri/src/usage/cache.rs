@@ -116,20 +116,9 @@ fn normalize_retry_after(retry_after: u64) -> u64 {
 }
 
 #[cfg(test)]
-fn reset_cache_for_test(cache: &Mutex<Cache>) {
-    let mut cache = cache.lock().unwrap();
-    cache.last = None;
-    cache.last_success = None;
-    cache.retry_until = None;
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
     use crate::usage::model::UsageWindow;
-
-    // 테스트 간 상태 격리를 위한 전용 캐시.
-    static TEST_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
 
     fn mock_usage() -> UsageSnapshot {
         UsageSnapshot {
@@ -147,11 +136,9 @@ mod tests {
         }
     }
 
-
     #[test]
     fn test_cache_flow() {
-        let cache = &TEST_CACHE;
-        reset_cache_for_test(cache);
+        let cache = &Mutex::new(Cache::new());
         assert!(matches!(before_fetch(cache).unwrap(), FetchDecision::Fetch));
 
         let usage = mock_usage();
@@ -165,17 +152,17 @@ mod tests {
         }
 
         // 빈 캐시에서 429 → 에러
-        reset_cache_for_test(cache);
-        let res = remember_retry(cache, 10);
+        let cache2 = &Mutex::new(Cache::new());
+        let res = remember_retry(cache2, 10);
         assert!(res.is_err());
         assert!(res.unwrap_err().contains("요청이 제한되었습니다"));
 
         // 이전 성공이 있으면 stale + retry_after_secs
-        remember_success(cache, &usage);
-        let stale = remember_retry(cache, 30).unwrap();
+        remember_success(cache2, &usage);
+        let stale = remember_retry(cache2, 30).unwrap();
         assert_eq!(stale.retry_after_secs, Some(30));
 
-        match before_fetch(cache).unwrap() {
+        match before_fetch(cache2).unwrap() {
             FetchDecision::UseCached(cached) => {
                 assert!(cached.retry_after_secs.unwrap() <= 30);
                 assert!(cached.retry_after_secs.unwrap() > 0);
@@ -186,8 +173,7 @@ mod tests {
 
     #[test]
     fn test_zero_retry_after_uses_default_backoff() {
-        let cache = &TEST_CACHE;
-        reset_cache_for_test(cache);
+        let cache = &Mutex::new(Cache::new());
         remember_success(cache, &mock_usage());
         let stale = remember_retry(cache, 0).unwrap();
         assert_eq!(stale.retry_after_secs, Some(DEFAULT_RETRY_SECS));
@@ -195,8 +181,7 @@ mod tests {
 
     #[test]
     fn test_fallback_stale_with_cache() {
-        let cache = &TEST_CACHE;
-        reset_cache_for_test(cache);
+        let cache = &Mutex::new(Cache::new());
 
         // 캐시 없으면 원래 에러 전달
         let err = remember_fallback_stale(cache, "파싱 실패".to_string());
