@@ -20,7 +20,8 @@
 | 패키지 매니저 | **pnpm** | `pnpm-workspace.yaml` 사용 |
 
 > 현재 상태: 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 **Claude Code 잔여 사용량**
-> 표시 UI가 구현됨([사용량 추적](#사용량-추적-claude-code) 참고). 릴리스 버전은 `0.0.2`,
+> 표시 UI(마지막 갱신 시각 포함)가 구현됨([사용량 추적](#사용량-추적-claude-code) 참고).
+> 릴리스 버전은 `0.0.2`,
 > 사용량 기능은 `feature-cc` 브랜치에서 개발 중(미릴리스). Codex·Antigravity 연동은 미구현.
 
 ## 디렉터리 구조
@@ -28,7 +29,7 @@
 ```
 handobar/
 ├─ src/                  # React 프론트엔드 (UI)
-│  ├─ App.tsx            # 메인 컴포넌트 (잔여 사용량 UI + 폴링 주기 설정)
+│  ├─ App.tsx            # 메인 컴포넌트 (잔여 사용량 UI + 마지막 갱신 시각 + 폴링 주기 설정)
 │  ├─ main.tsx          # React 진입점
 │  └─ assets/
 ├─ src-tauri/            # Tauri / Rust 백엔드
@@ -81,6 +82,10 @@ pnpm tauri build                     # 프로덕션 빌드 (.app / 설치 파일
 
 `src-tauri/src/usage.rs` 의 `get_claude_usage` 커맨드가 **Claude Code 잔여 사용량**을 fetch한다
 (키체인 토큰 → `GET /api/oauth/usage`, 잔여 = 100 − utilization). Codex·Antigravity는 미포함.
+
+프론트엔드(`src/App.tsx`)는 응답의 `fetched_at` 을 마지막 갱신 시각으로 표시한다. 백엔드 값은
+RFC3339/UTC 문자열로 유지하고, 화면에는 **KST 기준 `YYYY-MM-DDThh:mm:ss`** 형식(타임존 표기 제외)으로
+변환해 보여준다.
 
 > 엔드포인트·인증·키체인 토큰·폴링/rate limit(429 backoff)의 **단일 출처는
 > [`claude-usage` 스킬](.agents/skills/claude-usage/SKILL.md)** 이다.
