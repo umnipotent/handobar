@@ -118,6 +118,19 @@ API 호출, 키체인 인증, 캐시, 직렬화 모델을 나눈다. 외부 Taur
 > 엔드포인트·인증·키체인 토큰·폴링/rate limit(429 backoff)의 **단일 출처는
 > [`claude-usage` 스킬](.agents/skills/claude-usage/SKILL.md)** 이다.
 
+### macOS 코드 서명 (키체인 "항상 허용" 유지)
+
+사용량 토큰은 OS 키체인에서 읽으므로 첫 접근 시 macOS가 허용 프롬프트를 띄운다. **"항상 허용"은
+앱의 고정 서명 신원(Designated Requirement)에 묶인다.** 기본 **adhoc 서명**은 빌드마다 CDHash가 바뀌어
+매번 다시 묻는다. 고정 self-signed 인증서로 서명하면 DR이
+`identifier "dev.qus0in.handobar" and certificate leaf = H"<cert>"` 로 안정되어 허용이 유지된다.
+
+- **1회 셋업**: `pnpm setup:signing` (`scripts/setup-macos-signing.sh`, 멱등) — `handobar-dev` 자체 서명
+  코드서명 인증서를 키체인에 생성·신뢰한다. `tauri.conf.json` 의 `bundle.macOS.signingIdentity` 가 이를 가리킨다.
+- **권장 사용**: `pnpm tauri build` 로 서명된 `.app` 을 설치 → 한 번 "항상 허용" 후 재빌드에도 유지.
+- **`tauri dev` 한계**: dev는 cargo가 바이너리를 adhoc로 재서명하므로 Rust 재빌드마다 다시 프롬프트가 뜰 수 있다.
+  빌드된 dev 바이너리를 직접 서명하려면 `pnpm sign:dev`.
+
 ## 향후 개발 시 유의 사항
 
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
