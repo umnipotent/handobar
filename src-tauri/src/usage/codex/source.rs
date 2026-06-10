@@ -202,8 +202,20 @@ fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
 }
 
 fn to_window(window: RateWindow) -> Option<UsageWindow> {
+    Some(window_from_rate(window, chrono::Utc::now().timestamp()))
+}
+
+/// rollout 스냅샷의 한 윈도우를 잔여 사용량으로 변환한다.
+/// 저장된 `resets_at` 이 `now_secs` 기준 이미 지났으면 윈도우가 리셋된 것으로 보고
+/// 사용량을 0(잔여 100%)으로 처리하고 리셋 시각은 비운다(새 윈도우 시각은 알 수 없음).
+fn window_from_rate(window: RateWindow, now_secs: i64) -> UsageWindow {
+    if let Some(secs) = window.resets_at {
+        if secs <= now_secs {
+            return UsageWindow::from_used_percent(0.0, String::new());
+        }
+    }
     let resets_at = window.resets_at.and_then(epoch_to_rfc3339).unwrap_or_default();
-    Some(UsageWindow::from_used_percent(window.used_percent, resets_at))
+    UsageWindow::from_used_percent(window.used_percent, resets_at)
 }
 
 fn epoch_to_rfc3339(secs: i64) -> Option<String> {
@@ -221,13 +233,39 @@ mod tests {
         let found = find_rate_limits(&value).expect("rate_limits 발견");
         let limits: RateLimits = serde_json::from_value(found.clone()).unwrap();
 
-        let snapshot = to_snapshot(limits);
-        let five = snapshot.five_hour.unwrap();
+        // 리셋 시각(1781084708/1781429231)보다 이른 기준 시각 → 저장된 used_percent 유지.
+        let now = 1781000000;
+        let five = window_from_rate(limits.primary.unwrap(), now);
         assert_eq!(five.used, 83.0);
         assert_eq!(five.remaining, 17.0);
-        let seven = snapshot.seven_day.unwrap();
-        assert_eq!(seven.remaining, 54.0);
         assert!(five.resets_at.starts_with("2026-")); // epoch 변환 확인
+        let seven = window_from_rate(limits.secondary.unwrap(), now);
+        assert_eq!(seven.remaining, 54.0);
+    }
+
+    #[test]
+    fn treats_window_as_reset_when_resets_at_passed() {
+        // 저장된 리셋 시각이 지났으면 갱신된 것으로 보고 잔여 100%·리셋 시각 비움.
+        let window = RateWindow {
+            used_percent: 90.0,
+            resets_at: Some(1000),
+        };
+        let w = window_from_rate(window, 2000);
+        assert_eq!(w.used, 0.0);
+        assert_eq!(w.remaining, 100.0);
+        assert_eq!(w.resets_at, "");
+    }
+
+    #[test]
+    fn keeps_usage_when_resets_at_in_future() {
+        let window = RateWindow {
+            used_percent: 90.0,
+            resets_at: Some(5000),
+        };
+        let w = window_from_rate(window, 2000);
+        assert_eq!(w.used, 90.0);
+        assert_eq!(w.remaining, 10.0);
+        assert!(!w.resets_at.is_empty());
     }
 
     #[test]
