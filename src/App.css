@@ -73,6 +73,34 @@ body {
   margin-bottom: 16px;
 }
 
+.header-title-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c0c5;
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.drag-handle:hover {
+  background: #f1f1f4;
+  color: #666;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+
 h1,
 h2 {
   margin: 0;

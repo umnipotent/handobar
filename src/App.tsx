@@ -59,7 +59,7 @@ function App() {
     if (event.button !== 0) return;
 
     const target = event.target as HTMLElement;
-    if (target.closest("button, select, input, textarea, a, label")) return;
+    if (!target.closest(".drag-handle")) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
     panelDragRef.current = {
@@ -71,6 +71,7 @@ function App() {
       startY: event.clientY,
     };
   }
+
 
   function handlePointerMove(event: PointerEvent<HTMLElement>) {
     const drag = panelDragRef.current;

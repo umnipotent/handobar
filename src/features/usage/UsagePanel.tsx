@@ -15,6 +15,25 @@ export interface UsageProvider {
   webUrl?: string;
 }
 
+function DragHandleIcon() {
+  return (
+    <svg
+      width="12"
+      height="14"
+      viewBox="0 0 12 14"
+      fill="currentColor"
+      className="drag-handle-icon"
+    >
+      <circle cx="3" cy="3" r="1.2" />
+      <circle cx="3" cy="7" r="1.2" />
+      <circle cx="3" cy="11" r="1.2" />
+      <circle cx="9" cy="3" r="1.2" />
+      <circle cx="9" cy="7" r="1.2" />
+      <circle cx="9" cy="11" r="1.2" />
+    </svg>
+  );
+}
+
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
 export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: UsageProvider) {
   const {
@@ -53,7 +72,12 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
   return (
     <section className="panel">
       <header className="top">
-        <h2>{title}</h2>
+        <div className="header-title-area">
+          <div className="drag-handle" title="드래그하여 순서 변경">
+            <DragHandleIcon />
+          </div>
+          <h2>{title}</h2>
+        </div>
         {(usage?.model || usage?.subscription) && (
           <div className="header-badges">
             {usage?.model && <span className="badge model-badge">{usage.model}</span>}
