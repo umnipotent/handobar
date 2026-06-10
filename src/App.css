@@ -342,53 +342,25 @@ button:disabled {
   padding-top: 12px;
   border-top: 1px solid #eaeaea;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  justify-content: flex-end;
 }
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  font-size: 11px;
-  color: #777;
-}
-
-.meta-label {
-  font-weight: 600;
-  width: 32px;
-  color: #555;
-  text-transform: uppercase;
-}
-
-.meta-code {
-  background: #f4f4f6;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10.5px;
-  color: #333;
-  border: 1px solid #e1e1e3;
-}
-
-
 
 .meta-link-btn {
-  background: none;
-  border: none;
-  padding: 0;
+  background: #efeaff;
+  border: 1px solid #dcd3ff;
+  padding: 5px 12px;
+  border-radius: 6px;
   color: #6b4eff;
   font-size: 11px;
   cursor: pointer;
-  text-decoration: underline;
-  text-align: left;
   font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  line-height: 1.2;
 }
 
 .meta-link-btn:hover {
-  color: #5235d9;
-  background: none;
+  background: #6b4eff;
+  color: #fff;
+  border-color: #6b4eff;
 }
-
-
-
-

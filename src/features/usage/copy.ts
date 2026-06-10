@@ -13,9 +13,9 @@ export const USAGE_COPY = {
     warning: "경고 닫기",
   },
   meta: {
-    cliLabel: "CLI",
-    webLabel: "Web",
+    directView: "직접 보기",
   },
+
 
 
   windows: {

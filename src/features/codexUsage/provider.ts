@@ -7,9 +7,9 @@ export const CODEX_USAGE_PROVIDER: UsageProvider = {
   title: "Codex",
   gateway: createTauriUsageGateway("get_codex_usage"),
   storageKey: "handobar.codex.intervalMin",
-  cliCmd: 'echo "/status" | codex e',
   webUrl: "https://chatgpt.com/codex/cloud/settings/analytics",
 };
+
 
 
 

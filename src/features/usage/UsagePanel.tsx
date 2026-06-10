@@ -11,7 +11,6 @@ export interface UsageProvider {
   title: string;
   gateway: UsageGateway;
   storageKey: string;
-  cliCmd?: string;
   webUrl?: string;
 }
 
@@ -35,8 +34,9 @@ function DragHandleIcon() {
 }
 
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
-export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: UsageProvider) {
+export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider) {
   const {
+
     usage,
     error,
     loading,
@@ -166,28 +166,15 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
         </button>
       </div>
 
-      {(cliCmd || webUrl) && (
+      {webUrl && (
         <div className="provider-meta">
-          {cliCmd && (
-            <div className="meta-item">
-              <span className="meta-label">{USAGE_COPY.meta.cliLabel}</span>
-              <code className="meta-code">
-                {cliCmd}
-              </code>
-            </div>
-          )}
-          {webUrl && (
-            <div className="meta-item">
-              <span className="meta-label">{USAGE_COPY.meta.webLabel}</span>
-              <button
-                type="button"
-                className="meta-link-btn"
-                onClick={() => handleOpenUrl(webUrl)}
-              >
-                {webUrl.replace(/^https?:\/\//, "")}
-              </button>
-            </div>
-          )}
+          <button
+            type="button"
+            className="meta-link-btn"
+            onClick={() => handleOpenUrl(webUrl)}
+          >
+            {USAGE_COPY.meta.directView}
+          </button>
         </div>
       )}
     </section>
