@@ -1,4 +1,4 @@
-import { open } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { USAGE_COPY } from "./copy";
 import { formatKstIsoWithoutTimezone } from "./format";
 import type { UsageGateway } from "./gateway";
@@ -40,11 +40,12 @@ export function UsagePanel({ title, gateway, storageKey, cliCmd, webUrl }: Usage
 
   const handleOpenUrl = async (url: string) => {
     try {
-      await open(url);
+      await openUrl(url);
     } catch {
       window.open(url, "_blank");
     }
   };
+
 
 
   return (
