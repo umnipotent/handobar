@@ -6,6 +6,8 @@ import {
   MAX_INTERVAL,
   RETRY_BUFFER_SECS,
   RETRY_FALLBACK_SECS,
+  THRESHOLD_DANGER,
+  THRESHOLD_CRITICAL,
 } from "./config";
 import { loadIntervalMin, saveIntervalMin } from "./storage";
 import type { UsageGateway } from "./gateway";
@@ -106,10 +108,10 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
         const nextUsage = await gateway.fetchUsage({ force: options?.force });
         setUsage(nextUsage);
 
-        if (nextUsage.five_hour && nextUsage.five_hour.remaining > 20) {
+        if (nextUsage.five_hour && nextUsage.five_hour.remaining > THRESHOLD_DANGER) {
           setFastModeWarningDismissed(false);
         }
-        if (nextUsage.five_hour && nextUsage.five_hour.remaining > 10) {
+        if (nextUsage.five_hour && nextUsage.five_hour.remaining > THRESHOLD_CRITICAL) {
           setSubModelWarningDismissed(false);
         }
 
@@ -197,8 +199,8 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const isFastModeWarningTarget =
     usage !== null &&
     usage.five_hour !== null &&
-    usage.five_hour.remaining <= 20 &&
-    usage.five_hour.remaining > 10;
+    usage.five_hour.remaining <= THRESHOLD_DANGER &&
+    usage.five_hour.remaining > THRESHOLD_CRITICAL;
 
   const showingFastModeWarning = isFastModeWarningTarget && !fastModeWarningDismissed;
 
@@ -209,7 +211,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const isSubModelWarningTarget =
     usage !== null &&
     usage.five_hour !== null &&
-    usage.five_hour.remaining <= 10;
+    usage.five_hour.remaining <= THRESHOLD_CRITICAL;
 
   const showingSubModelWarning = isSubModelWarningTarget && !subModelWarningDismissed;
 

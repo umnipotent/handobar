@@ -4,9 +4,10 @@ export const USAGE_COPY = {
   cooldownMessage: (seconds: number) => `요청 제한 중 · ${seconds}초 후 자동 재시도`,
   dismissCooldownLabel: "요청 제한 메시지 닫기",
   warnings: {
-    fastMode: "fast mode를 꺼주세요",
-    subModel: "하위 모델 전환을 추천합니다",
+    fastMode: "fast mode 비활성화를 추천합니다",
+    subModel: "복잡한 작업 지시를 지양하고 세션 상황을 계속 동기화하세요",
   },
+
   dismiss: {
     error: "에러 메시지 닫기",
     warning: "경고 닫기",
