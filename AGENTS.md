@@ -44,6 +44,26 @@ handobar/
 └─ vite.config.ts        # 포트 1420 고정, src-tauri watch 제외
 ```
 
+## 심볼릭 링크
+
+저장소는 같은 내용을 도구별 표준 경로로 노출하기 위해 아래 심볼릭 링크를 사용한다.
+모두 **상대 경로** 링크라 클론·다른 머신에서도 그대로 동작하며, Git에는 링크 자체(mode `120000`)로 커밋된다.
+
+| 링크 | 대상 | 목적 |
+| --- | --- | --- |
+| `CLAUDE.md` | `AGENTS.md` | Claude Code가 자동으로 읽는 `CLAUDE.md` 경로로 동일 가이드 노출 |
+| `.claude/skills` | `.agents/skills` | Claude Code 스킬 디렉터리(`.claude/skills`)로 프로젝트 스킬 전체 노출 |
+
+운영 시 주의:
+
+- **단일 출처는 링크 대상**(`AGENTS.md`, `.agents/skills/`). 링크 쪽을 직접 편집하지 말고 대상만 수정한다.
+- 새 스킬은 `.agents/skills/<name>/` 에 추가하면 디렉터리 링크를 통해 자동 노출된다 — 개별 링크 불필요.
+- 링크가 끊겼다면 다음으로 재생성한다:
+  ```sh
+  ln -s AGENTS.md CLAUDE.md
+  ln -s ../.agents/skills .claude/skills
+  ```
+
 ## 개발 환경 및 실행
 
 사전 요구 사항 (`docs/brew.md` 참고):
@@ -117,8 +137,8 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 반복적이고 결정론적인 워크플로는 `.agents/skills/<skill-name>/` 에 **스킬**로 분리해
 에이전트가 일관되게 수행하도록 한다. 스킬 작성·개선·평가는 `skill-creator` 스킬을 기준으로 삼는다.
 
-> Claude Code가 자동 인식하도록 `.claude/skills` → `.agents/skills` 디렉터리 심볼릭 링크가
-> 걸려 있다. 새 스킬은 `.agents/skills/<name>/` 에 추가하기만 하면 별도 링크 없이 바로 노출된다.
+> Claude Code는 [`.claude/skills` → `.agents/skills` 심볼릭 링크](#심볼릭-링크)로 스킬을 인식한다.
+> 새 스킬은 `.agents/skills/<name>/` 에 추가하기만 하면 별도 링크 없이 바로 노출된다.
 
 > `skill-creator` 는 `anthropics/skills` 에서 가져온 **서드파티 vendored 스킬**로,
 > `skills-lock.json` 으로 버전이 관리되며 **저장소에는 커밋하지 않는다**(`.gitignore`).
