@@ -19,20 +19,21 @@
 | 번들러 | **Vite 7** | 개발 서버(포트 `1420` 고정) 및 빌드 |
 | 패키지 매니저 | **pnpm** | `pnpm-workspace.yaml` 사용 |
 
-> 현재 상태: `pnpm create tauri-app` 로 생성된 **초기 스캐폴드**. `greet` 예제 커맨드와
-> 기본 React 데모 화면(`src/App.tsx`)만 존재하며, 실제 사용량 추적 로직은 아직 미구현.
+> 현재 상태(`0.0.1`): 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 사용량 표시 UI의
+> 기본 골격이 구현됨. `get_usage_summary` 커맨드는 아직 **더미 문자열**을 반환하며,
+> 실제 사용량 수집 로직은 미구현.
 
 ## 디렉터리 구조
 
 ```
 handobar/
 ├─ src/                  # React 프론트엔드 (UI)
-│  ├─ App.tsx            # 메인 컴포넌트 (현재 Tauri 데모 화면)
+│  ├─ App.tsx            # 메인 컴포넌트 (사용량 표시 UI)
 │  ├─ main.tsx          # React 진입점
 │  └─ assets/
 ├─ src-tauri/            # Tauri / Rust 백엔드
 │  ├─ src/
-│  │  ├─ lib.rs         # 앱 빌더 + #[tauri::command] 정의 (greet 등)
+│  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + #[tauri::command] (get_usage_summary)
 │  │  └─ main.rs        # 바이너리 진입점 → handobar_lib::run()
 │  ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar)
 │  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
@@ -66,14 +67,13 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
 
 ## 향후 개발 시 유의 사항
 
-1. **트레이 구현**: 메뉴바 앱이 목표이므로 `tauri::tray::TrayIconBuilder` 기반 트레이 아이콘/메뉴 구성이 핵심 작업.
-   - 메인 윈도우는 트레이에서 토글하는 팝오버 형태로 전환 필요 (현재는 800x600 일반 윈도우).
-2. **사용량 데이터 수집**: Codex / Claude Code / Antigravity 각각의 사용량 소스(설정 파일, API, 로그 등)를
-   조사한 뒤 Rust 백엔드에서 읽어와 프론트로 전달하는 구조 권장.
+1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
+   - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
+2. **사용량 데이터 수집**: 현재 `get_usage_summary` 는 더미 문자열을 반환한다. Codex / Claude Code / Antigravity 각각의
+   사용량 소스(설정 파일, API, 로그 등)를 조사해 Rust 백엔드에서 읽어와 프론트로 전달하는 구조로 교체.
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함. `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
 4. **자동 생성/빌드 산출물**: `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 커밋 대상 아님.
-5. **데모 코드 정리**: 실제 기능 구현을 시작할 때 `greet` 커맨드와 `App.tsx` 의 React/Vite/Tauri 로고 데모를 제거할 것.
 
 ## 커밋 컨벤션
 
@@ -114,3 +114,27 @@ build: Tauri 2 + React 19 초기 스캐폴드 구성
 refactor: 사용량 수집 로직을 lib.rs에서 별도 모듈로 분리
 chore: 빌드 산출물 .gitignore 처리
 ```
+
+## 버전 관리
+
+[Semantic Versioning](https://semver.org/lang/ko/) (`MAJOR.MINOR.PATCH`) 을 따른다.
+
+### 버전 단일 출처(Single Source of Truth)
+
+버전 번호는 아래 **세 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
+
+| 파일 | 필드 |
+| --- | --- |
+| `package.json` | `"version"` |
+| `src-tauri/tauri.conf.json` | `"version"` |
+| `src-tauri/Cargo.toml` | `version` (변경 후 `Cargo.lock` 도 갱신) |
+
+### 릴리스 절차
+
+1. 위 세 파일의 버전을 동일한 값으로 수정한다.
+2. `cargo build` (또는 `pnpm tauri build`) 로 `Cargo.lock` 의 `handobar` 버전을 동기화한다.
+3. `chore: x.y.z 버전업` 형식으로 커밋한다.
+4. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
+
+> 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
+> 현재 버전: **`0.0.1`** (초기 트레이 + 사용량 UI 골격).
