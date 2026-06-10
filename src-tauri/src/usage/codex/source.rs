@@ -17,6 +17,16 @@ use serde_json::Value;
 use crate::usage::codex::messages;
 use crate::usage::model::{UsageSnapshot, UsageWindow};
 
+#[derive(Deserialize)]
+struct AuthTokens {
+    id_token: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct StoredAuth {
+    tokens: Option<AuthTokens>,
+}
+
 /// 최근 rollout 파일을 너무 깊게 거슬러 올라가지 않도록 제한.
 const MAX_FILES_SCANNED: usize = 60;
 
@@ -130,11 +140,39 @@ fn find_rate_limits(value: &Value) -> Option<&Value> {
     }
 }
 
+fn read_subscription_from_auth() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let auth_path = PathBuf::from(home).join(".codex").join("auth.json");
+    if !auth_path.is_file() {
+        return None;
+    }
+    let content = fs::read_to_string(auth_path).ok()?;
+    let auth: StoredAuth = serde_json::from_str(&content).ok()?;
+    let id_token = auth.tokens?.id_token?;
+
+    let parts: Vec<&str> = id_token.split('.').collect();
+    if parts.len() < 2 {
+        return None;
+    }
+
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+    let payload_bytes = URL_SAFE_NO_PAD.decode(parts[1]).ok()?;
+    let payload: Value = serde_json::from_slice(&payload_bytes).ok()?;
+
+    let plan = payload
+        .get("https://api.openai.com/auth")?
+        .get("chatgpt_plan_type")?
+        .as_str()?;
+
+    Some(plan.to_string())
+}
+
 fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
+    let subscription = read_subscription_from_auth();
     UsageSnapshot {
         five_hour: limits.primary.and_then(to_window),
         seven_day: limits.secondary.and_then(to_window),
-        subscription: None,
+        subscription,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
     }
