@@ -119,6 +119,13 @@ h1 {
   margin-top: 8px;
   font-size: 12px;
   color: #777;
+  display: grid;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.reset time {
+  color: #444;
 }
 
 .error {

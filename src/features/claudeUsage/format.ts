@@ -1,0 +1,34 @@
+import { CLAUDE_USAGE_COPY } from "./copy";
+
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+export function formatReset(iso: string): string {
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return "";
+
+  const diffMs = target - Date.now();
+  if (diffMs <= 0) return CLAUDE_USAGE_COPY.reset.soon;
+
+  const mins = Math.floor(diffMs / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+
+  if (h >= 24) return CLAUDE_USAGE_COPY.reset.daysHours(Math.floor(h / 24), h % 24);
+  return h > 0
+    ? CLAUDE_USAGE_COPY.reset.hoursMinutes(h, m)
+    : CLAUDE_USAGE_COPY.reset.minutes(m);
+}
+
+export function formatKstIsoWithoutTimezone(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+
+  const kst = new Date(date.getTime() + KST_OFFSET_MS);
+  return kst.toISOString().slice(0, 19);
+}
+
+export function formatResetExactTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return CLAUDE_USAGE_COPY.reset.exactTime(formatKstIsoWithoutTimezone(iso));
+}
