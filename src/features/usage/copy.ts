@@ -30,6 +30,10 @@ export const USAGE_COPY = {
   },
   usage: {
     emptyValue: "—",
+    exhausted: {
+      emoji: "💀",
+      message: "토큰이 HP라면 당신은 죽었습니다",
+    },
   },
   reset: {
     soon: "곧 리셋",

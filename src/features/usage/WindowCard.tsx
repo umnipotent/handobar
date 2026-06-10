@@ -1,6 +1,7 @@
 import { formatReset, formatResetExactTime } from "./format";
 import type { UsageWindow } from "./types";
 import { THRESHOLD_DANGER, THRESHOLD_WARNING } from "./config";
+import { USAGE_COPY } from "./copy";
 import "./WindowCard.css";
 
 
@@ -24,6 +25,7 @@ export function WindowCard({
   onToggleCollapse,
 }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
+  const isExhausted = remaining === 0;
   const isDanger = remaining !== null && remaining <= THRESHOLD_DANGER;
   const isWarning =
     remaining !== null &&
@@ -42,6 +44,8 @@ export function WindowCard({
   } else if (isWarning) {
     statusClass = "warning";
   }
+
+  const { emoji, message } = USAGE_COPY.usage.exhausted;
 
   const headContent = (
     <>
@@ -69,7 +73,7 @@ export function WindowCard({
   );
 
   return (
-    <section className={`card ${empty ? "empty" : ""} ${collapsed ? "card-collapsed" : ""}`}>
+    <section className={`card ${empty ? "empty" : ""} ${collapsed ? "card-collapsed" : ""} ${isExhausted ? "exhausted" : ""}`}>
       {collapsible ? (
         <button
           type="button"
@@ -88,10 +92,16 @@ export function WindowCard({
         <>
           <div className={`remaining ${statusClass}`}>
             {remaining}%
+            {isExhausted && (
+              <span className="exhausted-emoji" aria-label="고갈">{emoji}</span>
+            )}
           </div>
           <div className="bar">
             <div className={`bar-fill ${statusClass}`} style={{ width: `${remaining}%` }} />
           </div>
+          {isExhausted && (
+            <p className="exhausted-message">{message}</p>
+          )}
           <div className="reset">
             {resetRelative && <span>{resetRelative}</span>}
             {resetExact && <time dateTime={data!.resets_at}>{resetExact}</time>}

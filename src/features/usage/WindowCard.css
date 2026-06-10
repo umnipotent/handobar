@@ -12,6 +12,11 @@
   border-color: #e4e4e7;
 }
 
+.card.exhausted {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 4%, white);
+}
+
 .card-head {
   display: flex;
   align-items: baseline;
@@ -85,8 +90,33 @@
   font-family: var(--font-family-title);
   font-variant-numeric: tabular-nums;
   display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+@keyframes skull-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-12deg); }
+  40%       { transform: rotate(10deg); }
+  60%       { transform: rotate(-8deg); }
+  80%       { transform: rotate(6deg); }
+}
+
+.exhausted-emoji {
+  display: inline-block;
+  font-size: 0.75em;
+  line-height: 1;
+  animation: skull-wobble 1.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.exhausted-message {
+  margin: 8px 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.85;
+}
 
 .remaining.low,
 .remaining.danger {
