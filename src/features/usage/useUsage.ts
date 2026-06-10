@@ -27,6 +27,8 @@ export interface UsageState {
   intervalOptions: number[];
   showingFastModeWarning: boolean;
   dismissFastModeWarning: () => void;
+  showingSubModelWarning: boolean;
+  dismissSubModelWarning: () => void;
 }
 
 const intervalOptions = Array.from({ length: MAX_INTERVAL }, (_, i) => i + 1);
@@ -55,6 +57,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const [cooldownVisible, setCooldownVisible] = useState(false);
   const [showingManualRefreshSkeleton, setShowingManualRefreshSkeleton] = useState(false);
   const [fastModeWarningDismissed, setFastModeWarningDismissed] = useState(false);
+  const [subModelWarningDismissed, setSubModelWarningDismissed] = useState(false);
   const [, forceClockTick] = useState(0);
 
   const intervalRef = useRef(intervalMin);
@@ -103,6 +106,9 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
 
         if (nextUsage.five_hour && nextUsage.five_hour.remaining > 20) {
           setFastModeWarningDismissed(false);
+        }
+        if (nextUsage.five_hour && nextUsage.five_hour.remaining > 10) {
+          setSubModelWarningDismissed(false);
         }
 
         const retryAfterSecs = normalizeRetryAfterSecs(nextUsage.retry_after_secs);
@@ -189,12 +195,24 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const isFastModeWarningTarget =
     usage !== null &&
     usage.five_hour !== null &&
-    usage.five_hour.remaining <= 20;
+    usage.five_hour.remaining <= 20 &&
+    usage.five_hour.remaining > 10;
 
   const showingFastModeWarning = isFastModeWarningTarget && !fastModeWarningDismissed;
 
   const dismissFastModeWarning = useCallback(() => {
     setFastModeWarningDismissed(true);
+  }, []);
+
+  const isSubModelWarningTarget =
+    usage !== null &&
+    usage.five_hour !== null &&
+    usage.five_hour.remaining <= 10;
+
+  const showingSubModelWarning = isSubModelWarningTarget && !subModelWarningDismissed;
+
+  const dismissSubModelWarning = useCallback(() => {
+    setSubModelWarningDismissed(true);
   }, []);
 
   return {
@@ -213,5 +231,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
     intervalOptions,
     showingFastModeWarning,
     dismissFastModeWarning,
+    showingSubModelWarning,
+    dismissSubModelWarning,
   };
 }

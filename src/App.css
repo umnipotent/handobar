@@ -286,7 +286,8 @@ button:disabled {
   cursor: default;
 }
 
-.fast-mode-warning {
+.fast-mode-warning,
+.sub-model-warning {
   margin: 0 0 12px;
   padding: 8px 12px;
   font-size: 12px;
@@ -300,7 +301,8 @@ button:disabled {
   font-weight: 500;
 }
 
-.fast-mode-warning-close {
+.fast-mode-warning-close,
+.sub-model-warning-close {
   width: 20px;
   height: 20px;
   padding: 0;
@@ -314,7 +316,8 @@ button:disabled {
   font-size: 14px;
 }
 
-.fast-mode-warning-close:hover {
+.fast-mode-warning-close:hover,
+.sub-model-warning-close:hover {
   background: rgba(138, 42, 29, 0.12);
 }
 

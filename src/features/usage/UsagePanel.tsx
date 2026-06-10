@@ -29,6 +29,8 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
     intervalOptions,
     showingFastModeWarning,
     dismissFastModeWarning,
+    showingSubModelWarning,
+    dismissSubModelWarning,
   } = useUsage(gateway, storageKey);
 
   return (
@@ -66,6 +68,19 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
             className="fast-mode-warning-close"
             type="button"
             onClick={dismissFastModeWarning}
+            aria-label="경고 닫기"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {showingSubModelWarning && (
+        <div className="sub-model-warning" role="status">
+          <span>하위 모델 전환을 추천합니다</span>
+          <button
+            className="sub-model-warning-close"
+            type="button"
+            onClick={dismissSubModelWarning}
             aria-label="경고 닫기"
           >
             ×
