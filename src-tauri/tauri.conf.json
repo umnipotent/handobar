@@ -14,6 +14,7 @@
       {
         "title": "handobar",
         "width": 800,
+        "minWidth": 408,
         "height": 600
       }
     ],

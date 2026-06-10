@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { clampIntervalMin, loadIntervalMin, saveIntervalMin } from "./storage";
+import { clampIntervalMin, loadIntervalMin, loadPanelOrder, saveIntervalMin, savePanelOrder } from "./storage";
 import { DEFAULT_INTERVAL, MAX_INTERVAL, MIN_INTERVAL } from "./config";
 
 const TEST_KEY = "handobar.test.intervalMin";
@@ -83,5 +83,35 @@ describe("localStorage operations (per provider key)", () => {
     saveIntervalMin("handobar.codex.intervalMin", 8);
     expect(loadIntervalMin("handobar.claude.intervalMin")).toBe(3);
     expect(loadIntervalMin("handobar.codex.intervalMin")).toBe(8);
+  });
+});
+
+describe("panel order storage", () => {
+  const defaultOrder = ["claude", "codex"] as const;
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("should load default panel order if storage is empty or invalid", () => {
+    expect(loadPanelOrder(defaultOrder)).toEqual(["claude", "codex"]);
+
+    localStorage.setItem("handobar.usage.panelOrder", "invalid");
+    expect(loadPanelOrder(defaultOrder)).toEqual(["claude", "codex"]);
+
+    localStorage.setItem("handobar.usage.panelOrder", JSON.stringify({ claude: 0 }));
+    expect(loadPanelOrder(defaultOrder)).toEqual(["claude", "codex"]);
+  });
+
+  it("should save and load the user panel order", () => {
+    savePanelOrder(["codex", "claude"]);
+
+    expect(loadPanelOrder(defaultOrder)).toEqual(["codex", "claude"]);
+  });
+
+  it("should ignore unknown panel ids and append missing known ids", () => {
+    localStorage.setItem("handobar.usage.panelOrder", JSON.stringify(["unknown", "codex"]));
+
+    expect(loadPanelOrder(defaultOrder)).toEqual(["codex", "claude"]);
   });
 });
