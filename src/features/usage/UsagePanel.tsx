@@ -72,16 +72,27 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
   return (
     <section className="panel">
       <header className="top">
-        <div className="header-title-area">
-          <div className="drag-handle" title="드래그하여 순서 변경">
-            <DragHandleIcon />
+        <div className="header-main-row">
+          <div className="header-title-area">
+            <div className="drag-handle" title="드래그하여 순서 변경">
+              <DragHandleIcon />
+            </div>
+            <h2>{title}</h2>
           </div>
-          <h2>{title}</h2>
         </div>
-        {(usage?.model || usage?.subscription) && (
-          <div className="header-badges">
+        {(usage?.model || usage?.subscription || webUrl) && (
+          <div className="header-sub-row">
             {usage?.model && <span className="badge model-badge">{usage.model}</span>}
             {usage?.subscription && <span className="badge">{usage.subscription}</span>}
+            {webUrl && (
+              <button
+                type="button"
+                className="meta-link-btn"
+                onClick={() => handleOpenUrl(webUrl)}
+              >
+                {USAGE_COPY.meta.directView}
+              </button>
+            )}
           </div>
         )}
       </header>
@@ -166,17 +177,7 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
         </button>
       </div>
 
-      {webUrl && (
-        <div className="provider-meta">
-          <button
-            type="button"
-            className="meta-link-btn"
-            onClick={() => handleOpenUrl(webUrl)}
-          >
-            {USAGE_COPY.meta.directView}
-          </button>
-        </div>
-      )}
+
     </section>
   );
 }

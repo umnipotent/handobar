@@ -68,9 +68,22 @@ body {
 
 .top {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.header-main-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+}
+
+.header-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .header-title-area {
@@ -337,19 +350,11 @@ button:disabled {
   cursor: default;
 }
 
-.provider-meta {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #eaeaea;
-  display: flex;
-  justify-content: flex-end;
-}
-
 .meta-link-btn {
   background: #efeaff;
   border: 1px solid #dcd3ff;
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
   color: #6b4eff;
   font-size: 11px;
   cursor: pointer;
