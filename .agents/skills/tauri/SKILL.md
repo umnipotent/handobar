@@ -68,9 +68,62 @@ src-tauri/
 `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 자동 생성/빌드 산출물이므로
 커밋하지 않는다.
 
+## macOS 코드 서명 (키체인 접근 영속화)
+
+handobar는 사용량 토큰을 **OS 키체인**(`Claude Code-credentials`)에서 읽으므로, 앱이 그 항목에 접근할 때
+macOS가 허용 프롬프트를 띄운다. 사용자가 **"항상 허용"** 을 눌러도, 그 권한은 앱의 **고정 서명 신원
+(Designated Requirement, DR)** 에 묶인다는 점이 핵심이다.
+
+### 왜 매번 다시 묻나 (근본 원인)
+
+- 기본 빌드는 **adhoc 서명**(`Signature=adhoc`, `TeamIdentifier=not set`)이다.
+- adhoc는 안정된 신원이 없어 DR이 바이너리 **CDHash**가 된다. `cargo build`/`tauri dev`로 **재빌드할 때마다
+  CDHash가 바뀌므로**, 저장된 "항상 허용"(이전 CDHash 기준)이 더 이상 매칭되지 않아 다시 묻는다.
+- 게다가 우리가 읽는 항목은 **Claude Code가 소유**한 교차-앱 항목이라 ACL 매칭이 더 엄격하다.
+
+### 해결: 고정 self-signed 신원으로 서명
+
+고정 인증서로 서명하면 DR이 CDHash가 아니라 **식별자 + 인증서**에 묶여 재빌드에도 동일하게 유지된다:
+
+```
+designated => identifier "dev.qus0in.handobar" and certificate leaf = H"<cert-sha1>"
+```
+
+1. **1회 셋업** (멱등): `pnpm setup:signing` → `scripts/setup-macos-signing.sh` 가 `handobar-dev`
+   self-signed **코드서명** 인증서를 로그인 키체인에 생성하고 코드서명용으로 신뢰 설정한다.
+   (내부적으로 openssl로 `extendedKeyUsage=codeSigning` 인증서를 만들고, macOS `security` 호환을 위해
+   legacy(SHA1 MAC/3DES) p12로 임포트한 뒤 `security add-trusted-cert -p codeSign` 으로 신뢰한다.)
+2. **설정 연결**: `tauri.conf.json` 의 `bundle.macOS.signingIdentity: "handobar-dev"` 가 이 신원을 가리킨다.
+   → `pnpm tauri build` 가 `.app` 을 이 신원으로 서명한다.
+3. **권장 사용**: 서명된 `.app` 을 설치해 실행 → 키체인에서 한 번 "항상 허용" 하면 이후 재빌드(같은 인증서)에도 유지.
+
+### `tauri dev` 한계
+
+`tauri dev` 는 cargo가 바이너리를 **adhoc로 (재)서명**하므로 `signingIdentity` 가 적용되지 않는다. 따라서
+Rust 재빌드마다 프롬프트가 다시 뜰 수 있다. 빌드된 dev 바이너리를 고정 신원으로 직접 서명하려면:
+
+```sh
+pnpm sign:dev   # codesign --force --identifier dev.qus0in.handobar --sign handobar-dev <debug binary>
+```
+
+지속적인 무프롬프트 경험이 필요하면 dev 대신 **서명된 release 빌드**를 사용한다.
+
+### 검증 / 트러블슈팅
+
+```sh
+security find-identity -v -p codesigning            # 'handobar-dev' 신원 존재 확인
+codesign -dvvv <바이너리>                            # Authority=handobar-dev, Signature!=adhoc 확인
+codesign -d --requirements - <바이너리>              # designated => ... certificate leaf = H"..." (고정 DR) 확인
+```
+
+- `signingIdentity` 는 **로컬 신원 이름**을 가리킨다. 신원이 없는 머신에서 `tauri build` 는 실패하므로
+  먼저 `pnpm setup:signing` 을 실행한다.
+- 인증서를 새로 만들면(인증서 해시 변경) DR이 바뀌어 키체인 "항상 허용"이 1회 다시 뜬다 — 정상이다.
+
 ## 연관 스킬
 
 - [`claude-usage`](../claude-usage/SKILL.md): 이 기능이 올라가는 커맨드 등록 / invoke / ACL 일반 패턴.
+  키체인에서 읽는 토큰이 코드 서명 프롬프트의 대상이다.
 - [`version-bump`](../version-bump/SKILL.md): `tauri.conf.json` · `Cargo.toml` 의 `version` 동기화.
 
 ## 유닛 테스트 (Unit Testing)

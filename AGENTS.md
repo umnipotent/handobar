@@ -120,16 +120,16 @@ API 호출, 키체인 인증, 캐시, 직렬화 모델을 나눈다. 외부 Taur
 
 ### macOS 코드 서명 (키체인 "항상 허용" 유지)
 
-사용량 토큰은 OS 키체인에서 읽으므로 첫 접근 시 macOS가 허용 프롬프트를 띄운다. **"항상 허용"은
-앱의 고정 서명 신원(Designated Requirement)에 묶인다.** 기본 **adhoc 서명**은 빌드마다 CDHash가 바뀌어
-매번 다시 묻는다. 고정 self-signed 인증서로 서명하면 DR이
-`identifier "dev.qus0in.handobar" and certificate leaf = H"<cert>"` 로 안정되어 허용이 유지된다.
+사용량 토큰을 키체인에서 읽을 때 macOS가 허용 프롬프트를 띄운다. **"항상 허용"은 앱의 고정 서명 신원에
+묶이는데**, 기본 adhoc 서명은 빌드마다 CDHash가 바뀌어 매번 다시 묻는다. 고정 self-signed 인증서로
+서명하면 신원이 안정되어 허용이 유지된다.
 
-- **1회 셋업**: `pnpm setup:signing` (`scripts/setup-macos-signing.sh`, 멱등) — `handobar-dev` 자체 서명
-  코드서명 인증서를 키체인에 생성·신뢰한다. `tauri.conf.json` 의 `bundle.macOS.signingIdentity` 가 이를 가리킨다.
-- **권장 사용**: `pnpm tauri build` 로 서명된 `.app` 을 설치 → 한 번 "항상 허용" 후 재빌드에도 유지.
-- **`tauri dev` 한계**: dev는 cargo가 바이너리를 adhoc로 재서명하므로 Rust 재빌드마다 다시 프롬프트가 뜰 수 있다.
-  빌드된 dev 바이너리를 직접 서명하려면 `pnpm sign:dev`.
+- **1회 셋업**: `pnpm setup:signing` → `handobar-dev` 코드서명 인증서 생성·신뢰
+  (`tauri.conf.json` 의 `bundle.macOS.signingIdentity` 가 이를 사용).
+- **권장**: `pnpm tauri build` 의 서명된 `.app` 사용 → 한 번 "항상 허용" 후 유지. dev는 `pnpm sign:dev`.
+
+> 원인·셋업·검증·트러블슈팅의 **단일 출처는 [`tauri` 스킬](.agents/skills/tauri/SKILL.md)** 의
+> "macOS 코드 서명" 절이다.
 
 ## 향후 개발 시 유의 사항
 
