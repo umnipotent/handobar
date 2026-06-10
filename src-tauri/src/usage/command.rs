@@ -4,9 +4,11 @@ use crate::usage::credentials::read_credentials;
 use crate::usage::messages;
 use crate::usage::models::{ClaudeUsage, UsageWindow};
 
-pub async fn get_claude_usage() -> Result<ClaudeUsage, String> {
-    if let FetchDecision::UseCached(usage) = cache::before_fetch()? {
-        return Ok(usage);
+pub async fn get_claude_usage(force: bool) -> Result<ClaudeUsage, String> {
+    if !force {
+        if let FetchDecision::UseCached(usage) = cache::before_fetch()? {
+            return Ok(usage);
+        }
     }
 
     let creds = read_credentials()?;

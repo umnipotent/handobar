@@ -5,6 +5,7 @@ use crate::usage::messages;
 use crate::usage::models::ClaudeUsage;
 
 const MIN_SPACING: Duration = Duration::from_secs(10);
+const DEFAULT_RETRY_SECS: u64 = crate::usage::api::DEFAULT_RETRY_SECS;
 
 pub(super) enum FetchDecision {
     UseCached(ClaudeUsage),
@@ -43,6 +44,7 @@ pub(super) fn before_fetch() -> Result<FetchDecision, String> {
 }
 
 pub(super) fn remember_retry(retry_after: u64) -> Result<ClaudeUsage, String> {
+    let retry_after = normalize_retry_after(retry_after);
     let mut cache = CACHE.lock().unwrap();
     cache.retry_until = Some(Instant::now() + Duration::from_secs(retry_after));
     stale_or_error(&cache, retry_after)
@@ -63,6 +65,14 @@ fn stale_or_error(cache: &Cache, retry_after: u64) -> Result<ClaudeUsage, String
             Ok(snapshot)
         }
         None => Err(messages::rate_limited(retry_after)),
+    }
+}
+
+fn normalize_retry_after(retry_after: u64) -> u64 {
+    if retry_after > 0 {
+        retry_after
+    } else {
+        DEFAULT_RETRY_SECS
     }
 }
 
@@ -134,5 +144,15 @@ mod tests {
             }
             _ => panic!("Expected UseCached during retry limit"),
         }
+    }
+
+    #[test]
+    fn test_zero_retry_after_uses_default_backoff() {
+        reset_cache_for_test();
+        let usage = mock_usage();
+        remember_success(&usage);
+
+        let stale = remember_retry(0).unwrap();
+        assert_eq!(stale.retry_after_secs, Some(DEFAULT_RETRY_SECS));
     }
 }

@@ -5,7 +5,7 @@ use crate::usage::models::ApiUsage;
 
 const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
 const OAUTH_BETA: &str = "oauth-2025-04-20";
-const DEFAULT_RETRY_SECS: u64 = 60;
+pub(super) const DEFAULT_RETRY_SECS: u64 = 60;
 
 pub(super) enum UsageApiError {
     RateLimited(u64),
@@ -50,11 +50,25 @@ pub(super) async fn fetch_usage(access_token: &str) -> Result<ApiUsage, UsageApi
 }
 
 fn parse_retry_after(resp: &reqwest::Response) -> Option<u64> {
-    resp.headers()
-        .get(reqwest::header::RETRY_AFTER)?
-        .to_str()
-        .ok()?
-        .trim()
-        .parse::<u64>()
-        .ok()
+    parse_retry_after_value(
+        resp.headers()
+            .get(reqwest::header::RETRY_AFTER)?
+            .to_str()
+            .ok()?,
+    )
+}
+
+fn parse_retry_after_value(value: &str) -> Option<u64> {
+    value.trim().parse::<u64>().ok().filter(|secs| *secs > 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_retry_after_value;
+
+    #[test]
+    fn test_retry_after_positive_filter() {
+        assert_eq!(parse_retry_after_value("0"), None);
+        assert_eq!(parse_retry_after_value("30"), Some(30));
+    }
 }

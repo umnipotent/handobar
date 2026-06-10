@@ -10,6 +10,6 @@ mod messages;
 mod models;
 
 #[tauri::command]
-pub async fn get_claude_usage() -> Result<models::ClaudeUsage, String> {
-    command::get_claude_usage().await
+pub async fn get_claude_usage(force: Option<bool>) -> Result<models::ClaudeUsage, String> {
+    command::get_claude_usage(force.unwrap_or(false)).await
 }
