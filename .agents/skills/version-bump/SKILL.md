@@ -37,7 +37,7 @@ python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
 
 ### 3. 커밋
 
-프로젝트 [커밋 컨벤션](../../../AGENTS.md)(`<영문 카테고리>: <한국어 설명>`)을 따른다.
+[`commit-message` 스킬](../commit-message/SKILL.md)을 따라 작성한다.
 
 ```
 chore: x.y.z 버전업

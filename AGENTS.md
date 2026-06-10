@@ -77,43 +77,14 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
 
 ## 커밋 컨벤션
 
-일반적인 Conventional Commits 규칙을 따르되, **영문 카테고리(type)** 와 **한국어 설명**을 조합한다.
-
-### 형식
-
-```
-<영문 카테고리>: <한국어로 작성한 커밋의 의도·목적·구성 설명>
-```
-
-- **영문 카테고리**: 변경의 성격을 나타내는 표준 타입(소문자).
-- **한국어 설명**: 무엇을, 왜, 어떻게 변경했는지를 한국어로 명료하게 기술.
-- 제목은 50자 내외로 간결하게. 필요 시 본문(body)에 상세 배경·구성 변경 내역을 한국어로 추가.
-
-### 카테고리 목록
-
-| 카테고리 | 의미 |
-| --- | --- |
-| `feat` | 새로운 기능 추가 |
-| `fix` | 버그 수정 |
-| `docs` | 문서 변경 (README, AGENTS.md, docs/ 등) |
-| `style` | 코드 포맷·세미콜론 등 동작에 영향 없는 변경 |
-| `refactor` | 기능 변화 없는 코드 구조 개선 |
-| `perf` | 성능 개선 |
-| `test` | 테스트 추가·수정 |
-| `build` | 빌드 시스템·의존성 변경 (Cargo, pnpm, vite 등) |
-| `chore` | 그 외 잡무 (설정, 스캐폴드, 자동 생성물 등) |
-| `ci` | CI 설정 변경 |
-
-### 예시
+`<영문 카테고리>: <한국어 설명>` 형식(영문 Conventional-Commits type + 한국어 의도 설명)을 따른다.
 
 ```
 feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
-fix: 개발 서버 포트 충돌 시 앱이 멈추던 문제 해결
-docs: AGENTS.md에 프로젝트 구조와 커밋 컨벤션 정리
-build: Tauri 2 + React 19 초기 스캐폴드 구성
-refactor: 사용량 수집 로직을 lib.rs에서 별도 모듈로 분리
-chore: 빌드 산출물 .gitignore 처리
 ```
+
+> 카테고리 선택 기준·예시·작성 절차의 **단일 출처는 [`commit-message` 스킬](.agents/skills/commit-message/SKILL.md)** 이다.
+> 커밋 메시지를 작성할 때는 이 스킬을 따른다.
 
 ## 버전 관리
 
@@ -135,7 +106,7 @@ chore: 빌드 산출물 .gitignore 처리
 
 1. 네 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`)의 버전을 동일하게 맞춘다.
    → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
-2. `chore: x.y.z 버전업` 형식으로 커밋한다.
+2. [`commit-message` 스킬](#스킬skills)을 따라 `chore: x.y.z 버전업` 으로 커밋한다.
 3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
@@ -171,9 +142,9 @@ chore: 빌드 산출물 .gitignore 처리
 
 ### 현재 스킬 목록
 
-| 스킬 | 출처(AGENTS.md 섹션) | 용도 |
-| --- | --- | --- |
-| [`version-bump`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) |
+| 스킬 | 출처(AGENTS.md 섹션) | 용도 | 호출 시점 |
+| --- | --- | --- | --- |
+| [`commit-message`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 작성 | 커밋 메시지를 쓸 때마다 |
+| [`version-bump`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
 
-> **스킬화 후보(미구현)**: [커밋 컨벤션](#커밋-컨벤션)은 정형 변환이지만 주관적 요약이 섞여
-> 경계선 후보다. 필요해지면 `commit-message` 스킬로 분리 가능.
+**연관**: `version-bump` 의 커밋 단계는 `commit-message` 스킬을 호출해 메시지를 작성한다.
