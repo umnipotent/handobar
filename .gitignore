@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vendored skills (managed by skills-lock.json, re-fetched on install)
+.agents/skills/skill-creator/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

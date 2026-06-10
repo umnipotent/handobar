@@ -131,10 +131,49 @@ chore: 빌드 산출물 .gitignore 처리
 
 ### 릴리스 절차
 
-1. 위 세 파일의 버전을 동일한 값으로 수정한다.
-2. `cargo build` (또는 `pnpm tauri build`) 로 `Cargo.lock` 의 `handobar` 버전을 동기화한다.
-3. `chore: x.y.z 버전업` 형식으로 커밋한다.
-4. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
+이 절차는 [`version-bump` 스킬](#스킬skills)로 자동화되어 있다. **버전업 시 스킬을 사용한다.**
+
+1. 네 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`)의 버전을 동일하게 맞춘다.
+   → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
+2. `chore: x.y.z 버전업` 형식으로 커밋한다.
+3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
 > 현재 버전: **`0.0.1`** (초기 트레이 + 사용량 UI 골격).
+
+## 스킬(Skills)
+
+반복적이고 결정론적인 워크플로는 `.agents/skills/<skill-name>/` 에 **스킬**로 분리해
+에이전트가 일관되게 수행하도록 한다. 스킬 작성·개선·평가는 `skill-creator` 스킬을 기준으로 삼는다.
+
+> `skill-creator` 는 `anthropics/skills` 에서 가져온 **서드파티 vendored 스킬**로,
+> `skills-lock.json` 으로 버전이 관리되며 **저장소에는 커밋하지 않는다**(`.gitignore`).
+> 클론 후 스킬 설치 도구로 재설치하면 `.agents/skills/skill-creator/` 에 복원된다.
+
+### 스킬화 기준
+
+`skill-creator` 가이드에 근거해, 아래에 해당할수록 스킬화한다.
+
+- **반복성**: 같은 절차를 여러 번 수행한다 (릴리스, 정형 커밋 등).
+- **결정론성**: 입력이 같으면 출력이 같다 → `scripts/` 로 묶어 실수를 없앤다.
+- **다단계·실수 유발**: 여러 파일/단계를 손으로 맞춰야 해 누락이 잦다.
+- **명확한 트리거**: "이럴 때 쓴다"를 한 문장으로 기술할 수 있다.
+
+반대로 1회성 작업, 주관적 판단(디자인·문체)이 핵심인 작업은 스킬화하지 않고 문서로 남긴다.
+
+### 스킬 작성 원칙 (요약)
+
+- `SKILL.md` 프런트매터의 `name` 과 `description` 이 트리거의 핵심. `description` 에
+  "무엇을 하는지 + 언제 쓰는지"를 모두 담고, 과소 트리거를 막기 위해 다소 적극적으로 기술한다.
+- 점진적 공개(Progressive Disclosure): 본문은 간결히, 큰 참고 문서는 `references/`,
+  결정론적 작업은 `scripts/` 로 분리한다.
+- 자세한 절차·평가 루프는 `skill-creator` 스킬(재설치 후 `.agents/skills/skill-creator/SKILL.md`) 참고.
+
+### 현재 스킬 목록
+
+| 스킬 | 출처(AGENTS.md 섹션) | 용도 |
+| --- | --- | --- |
+| [`version-bump`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) |
+
+> **스킬화 후보(미구현)**: [커밋 컨벤션](#커밋-컨벤션)은 정형 변환이지만 주관적 요약이 섞여
+> 경계선 후보다. 필요해지면 `commit-message` 스킬로 분리 가능.
