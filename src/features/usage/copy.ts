@@ -1,6 +1,15 @@
 // provider 공통 화면 문구(한국어). provider별로 다른 것은 제목뿐이라 제목은 패널 prop으로 받는다.
 export const USAGE_COPY = {
   lastRefreshLabel: "마지막 갱신",
+  statusBar: {
+    ariaLabel: "상태 표시줄",
+    clockLabel: "현재 시각",
+    criticalsLabel: "갱신 임박 한도",
+    empty: "여유 있음",
+    unknownReset: "리셋 시각 미상",
+    // '5시간' 같은 윈도우 명칭은 혼란을 주므로 표시하지 않고 마감(리셋)만 보여준다.
+    item: (providerTitle: string, reset: string) => `${providerTitle} · ${reset}`,
+  },
   cooldownMessage: (seconds: number) =>
     `요청 제한 중 · ${seconds}초 후 자동 재시도`,
   dismissCooldownLabel: "요청 제한 메시지 닫기",
@@ -19,6 +28,18 @@ export const USAGE_COPY = {
     directView: "사용량 웹에서 보기",
   },
 
+  memo: {
+    title: "메모",
+    placeholder: "여기에 간단한 메모를 남겨보세요 (마크다운 지원)",
+    expand: "메모 펼치기",
+    collapse: "메모 접기",
+    edit: "수정",
+    save: "저장",
+    cancel: "취소",
+    viewRendered: "마크다운 보기",
+    viewSource: "원본 보기",
+    emptyView: "작성된 메모가 없습니다",
+  },
   windows: {
     fiveHour: {
       title: "최근 5시간",

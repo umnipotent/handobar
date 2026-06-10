@@ -1,13 +1,15 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { USAGE_COPY } from "./copy";
 import { formatKstIsoWithoutTimezone } from "./format";
+import { THRESHOLD_CRITICAL } from "./config";
 import type { UsageGateway } from "./gateway";
 import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
+import { MemoCard } from "./MemoCard";
 import { AlertBanner } from "./AlertBanner";
-import type { UsageWindow } from "./types";
-import { loadCollapsed, saveCollapsed } from "./storage";
+import type { CriticalWindowStatus, ProviderCriticalStatus, UsageWindow } from "./types";
+import { loadCollapsed, loadMemo, saveCollapsed, saveMemo } from "./storage";
 import "./UsagePanel.css";
 
 export interface UsageProvider {
@@ -16,6 +18,11 @@ export interface UsageProvider {
   gateway: UsageGateway;
   storageKey: string;
   webUrl?: string;
+}
+
+interface UsagePanelProps extends UsageProvider {
+  // 가능 사용량 20% 이하 윈도우를 상위(상태 표시줄)로 보고한다. 임계 아니면 null.
+  onCriticalChange?: (providerId: string, status: ProviderCriticalStatus | null) => void;
 }
 
 /** usage가 있는데 윈도우가 null이면 0% 고갈로 처리한다. */
@@ -72,11 +79,13 @@ function RefreshIcon({ className }: { className?: string }) {
 
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
 export function UsagePanel({
+  id,
   title,
   gateway,
   storageKey,
   webUrl,
-}: UsageProvider) {
+  onCriticalChange,
+}: UsagePanelProps) {
   const {
     usage,
     error,
@@ -102,6 +111,22 @@ export function UsagePanel({
     loadCollapsed(`${storageKey}.sevenDay.collapsed`)
   );
 
+  // 자유 메모: 내용·접힘 상태 모두 localStorage 유지 (기본 접힘).
+  const [memo, setMemo] = useState(() => loadMemo(`${storageKey}.memo`));
+  const [memoCollapsed, setMemoCollapsed] = useState(() =>
+    loadCollapsed(`${storageKey}.memo.collapsed`, true)
+  );
+
+  const handleMemoSave = (next: string) => {
+    setMemo(next);
+    saveMemo(`${storageKey}.memo`, next);
+  };
+
+  const toggleMemo = (next: boolean) => {
+    setMemoCollapsed(next);
+    saveCollapsed(`${storageKey}.memo.collapsed`, next);
+  };
+
   // exhausted 메시지 닫기 상태. 사용량이 0%→양수로 회복되면 자동 리셋.
   const fiveHourRemaining = usage?.five_hour?.remaining ?? (usage != null ? 0 : null);
   const sevenDayRemaining = usage?.seven_day?.remaining ?? (usage != null ? 0 : null);
@@ -124,6 +149,41 @@ export function UsagePanel({
   const hasUsage = usage != null;
   const fiveHourData = resolveWindow(usage?.five_hour, hasUsage);
   const sevenDayData = resolveWindow(usage?.seven_day, hasUsage);
+
+  // 가능 사용량 20% 이하 윈도우를 모아 상위(상태 표시줄)로 보고한다.
+  // 주간을 먼저 담아 둘 다 임계일 때 주간 마감이 우선 표시되도록 한다(windows[0]).
+  const criticalWindows: CriticalWindowStatus[] = [];
+  if (sevenDayData && sevenDayData.remaining <= THRESHOLD_CRITICAL) {
+    criticalWindows.push({
+      windowTitle: USAGE_COPY.windows.sevenDay.title,
+      remaining: sevenDayData.remaining,
+      resetsAt: sevenDayData.resets_at,
+    });
+  }
+  if (fiveHourData && fiveHourData.remaining <= THRESHOLD_CRITICAL) {
+    criticalWindows.push({
+      windowTitle: USAGE_COPY.windows.fiveHour.title,
+      remaining: fiveHourData.remaining,
+      resetsAt: fiveHourData.resets_at,
+    });
+  }
+  // 매 렌더 새 배열이라 직렬화 키로 변경 여부만 추려 보고 (무한 루프 방지).
+  const criticalKey = JSON.stringify(criticalWindows);
+  useEffect(() => {
+    if (!onCriticalChange) return;
+    const status: ProviderCriticalStatus | null =
+      criticalWindows.length > 0
+        ? { providerId: id, providerTitle: title, windows: criticalWindows }
+        : null;
+    onCriticalChange(id, status);
+    // criticalWindows는 criticalKey로 대표한다 (객체 동일성 비교 회피).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [criticalKey, id, title, onCriticalChange]);
+
+  // 패널 언마운트 시 임계 상태 정리.
+  useEffect(() => {
+    return () => onCriticalChange?.(id, null);
+  }, [id, onCriticalChange]);
 
   const handleOpenUrl = async (url: string) => {
     try {
@@ -174,6 +234,24 @@ export function UsagePanel({
         </p>
       )}
 
+      <WindowCard
+        title={USAGE_COPY.windows.fiveHour.title}
+        hint={USAGE_COPY.windows.fiveHour.hint}
+        data={fiveHourData}
+        skeleton={showingManualRefreshSkeleton}
+      />
+
+      {/* 5시간 고갈 배너 */}
+      {fiveHourData?.remaining === 0 && !fiveHourExhaustedDismissed && (
+        <AlertBanner
+          message={USAGE_COPY.usage.exhausted.message}
+          type="danger"
+          onDismiss={() => setFiveHourExhaustedDismissed(true)}
+          dismissLabel={USAGE_COPY.dismiss.exhausted}
+        />
+      )}
+
+      {/* 알림 배너: 일간과 주간 사이에 배치 */}
       {error && (
         <AlertBanner
           message={error}
@@ -212,23 +290,6 @@ export function UsagePanel({
         />
       )}
 
-      <WindowCard
-        title={USAGE_COPY.windows.fiveHour.title}
-        hint={USAGE_COPY.windows.fiveHour.hint}
-        data={fiveHourData}
-        skeleton={showingManualRefreshSkeleton}
-      />
-
-      {/* 5시간 고갈 배너 */}
-      {fiveHourData?.remaining === 0 && !fiveHourExhaustedDismissed && (
-        <AlertBanner
-          message={USAGE_COPY.usage.exhausted.message}
-          type="danger"
-          onDismiss={() => setFiveHourExhaustedDismissed(true)}
-          dismissLabel={USAGE_COPY.dismiss.exhausted}
-        />
-      )}
-
       {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
       <WindowCard
         title={USAGE_COPY.windows.sevenDay.title}
@@ -249,6 +310,14 @@ export function UsagePanel({
           dismissLabel={USAGE_COPY.dismiss.exhausted}
         />
       )}
+
+      {/* 메모 탭: 주간 아래, 가로 풀 박스 메모지 (접기/펼치기 유지) */}
+      <MemoCard
+        value={memo}
+        onSave={handleMemoSave}
+        collapsed={memoCollapsed}
+        onToggleCollapse={() => toggleMemo(!memoCollapsed)}
+      />
 
       <div className="controls">
         <label>

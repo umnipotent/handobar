@@ -1,5 +1,5 @@
 ---
-name: commit-message
+name: hb-commit
 description: Write git commit messages for the handobar project in its house style — an English Conventional-Commits category followed by a Korean description (`<type>: <한국어 설명>`). Use this skill whenever you are about to commit, are asked to "커밋"/"commit"/"커밋 메시지 작성", need to phrase a commit subject/body, or are deciding which commit type (feat/fix/docs/...) applies. Route every commit message in this repo through here so the type taxonomy and Korean wording stay consistent.
 ---
 

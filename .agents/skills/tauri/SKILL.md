@@ -1,5 +1,5 @@
 ---
-name: tauri
+name: hb-tauri
 description: How to develop the handobar app's Tauri 2 (Rust) native shell — running the app (pnpm tauri dev/build), wiring the React frontend to Rust via invoke ↔ #[tauri::command], adding new native commands, and declaring filesystem/network permissions in capabilities (ACL). Use this skill whenever you add or change a Tauri command, call invoke from the frontend, hit a permission/ACL error, edit src-tauri/, or need the dev/build commands and prerequisites. This is the single source of truth for handobar's Tauri workflow.
 ---
 

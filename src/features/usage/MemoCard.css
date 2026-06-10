@@ -1,0 +1,230 @@
+.memo-card {
+  /* 메모지 느낌의 옅은 노란 배경 */
+  background: #fffdf3;
+  border-color: #efe6c2;
+}
+
+/* 헤더: 좌측 접기 버튼 + 우측 액션 버튼 (버튼 중첩 방지를 위해 별도 sibling) */
+.memo-head {
+  align-items: center;
+}
+
+.memo-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: -4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  transition: background 0.12s ease;
+}
+
+.memo-collapse-btn:hover {
+  background: color-mix(in srgb, var(--color-text-muted) 6%, transparent);
+}
+
+.memo-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memo-view-toggle {
+  display: inline-flex;
+  border: 1px solid #e6dcae;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fffef9;
+}
+
+.memo-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.memo-icon-btn:hover {
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-primary);
+}
+
+.memo-view-toggle .memo-icon-btn.active {
+  background: var(--color-warning);
+  color: #fff;
+}
+
+.memo-action-btn {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #e6dcae;
+  border-radius: var(--radius-sm);
+  background: #fffef9;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.memo-action-btn:hover {
+  border-color: var(--color-warning);
+}
+
+.memo-action-btn.primary {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: #fff;
+}
+
+.memo-action-btn.primary:hover {
+  background: color-mix(in srgb, var(--color-warning) 85%, black);
+}
+
+.memo-body {
+  margin-top: 12px;
+}
+
+.memo-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e6dcae;
+  border-radius: var(--radius-sm);
+  background: #fffef9;
+  color: #222;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.memo-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.55;
+}
+
+.memo-input:focus {
+  outline: none;
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-warning) 25%, transparent);
+}
+
+.memo-empty {
+  margin: 0;
+  padding: 8px 2px;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  font-size: var(--font-size-sm);
+}
+
+.memo-source {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fbf6e2;
+  border: 1px solid #ece2bb;
+  color: #3a3526;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 렌더링된 마크다운 */
+.memo-rendered {
+  color: #2c2c2c;
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.memo-rendered .md-paragraph {
+  margin: 0 0 8px;
+}
+
+.memo-rendered .md-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.memo-rendered .md-heading {
+  margin: 12px 0 6px;
+  font-family: var(--font-family-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+}
+
+.memo-rendered .md-heading:first-child {
+  margin-top: 0;
+}
+
+.memo-rendered .md-h1 {
+  font-size: var(--font-size-md);
+}
+
+.memo-rendered .md-h2 {
+  font-size: var(--font-size-base);
+}
+
+.memo-rendered .md-h3 {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.memo-rendered .md-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.memo-rendered .md-list li {
+  margin: 2px 0;
+}
+
+.memo-rendered code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f1e9cb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.memo-rendered .md-code-block {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fbf6e2;
+  border: 1px solid #ece2bb;
+  overflow-x: auto;
+}
+
+.memo-rendered .md-code-block code {
+  padding: 0;
+  background: none;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.memo-rendered a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.memo-rendered strong {
+  font-weight: var(--font-weight-semibold);
+}

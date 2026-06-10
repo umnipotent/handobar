@@ -79,7 +79,7 @@ pnpm tauri build                     # 프로덕션 빌드 (.app / 설치 파일
 ```
 
 > 실행/빌드, 프론트–백엔드 `invoke` 통신, 새 커맨드 추가 절차, 권한(ACL)의 **단일 출처는
-> [`tauri` 스킬](.agents/skills/tauri/SKILL.md)** 이다. Tauri 백엔드를 만질 때는 이 스킬을 따른다.
+> [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md)** 이다. Tauri 백엔드를 만질 때는 이 스킬을 따른다.
 
 ## 유닛 테스트
 
@@ -99,7 +99,7 @@ pnpm tauri build                     # 프로덕션 빌드 (.app / 설치 파일
     - [storage.test.ts](file:///Users/morgan/Development/handobar/src/features/usage/storage.test.ts): localStorage 입출력·boundary clamp·provider별 키 격리 검증 (LocalStorage Mock 활용).
 
 > 테스트 작성 전략, 시간 Mocking 및 전역 자원 모의 구현(Mocking) 가이드 등 상세한 가이드의 **단일 출처는
-> [`tauri` 스킬](.agents/skills/tauri/SKILL.md) 및 [`usage` 스킬](.agents/skills/usage/SKILL.md)** 에 구체화되어 있다.
+> [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md) 및 [`hb-usage` 스킬](.agents/skills/usage/SKILL.md)** 에 구체화되어 있다.
 
 ## 사용량 추적
 
@@ -124,7 +124,7 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 - 임계값 수치(예: 60%, 40%, 20%) 또한 하드코딩하지 않으며 `src/features/usage/config.ts`에 상수(`THRESHOLD_WARNING`, `THRESHOLD_DANGER`, `THRESHOLD_CRITICAL`)로 선언하여 참조해야 한다.
 
 > 엔드포인트·인증·소스·폴링/rate limit·경고 정책·provider 추가 절차의 **단일 출처는
-> [`usage` 스킬](.agents/skills/usage/SKILL.md)** 이다.
+> [`hb-usage` 스킬](.agents/skills/usage/SKILL.md)** 이다.
 
 ### macOS 코드 서명 (키체인 "항상 허용" 유지)
 
@@ -136,7 +136,7 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
   (`tauri.conf.json` 의 `bundle.macOS.signingIdentity` 가 이를 사용).
 - **권장**: `pnpm tauri build` 의 서명된 `.app` 사용 → 한 번 "항상 허용" 후 유지. dev는 `pnpm sign:dev`.
 
-> 원인·셋업·검증·트러블슈팅의 **단일 출처는 [`tauri` 스킬](.agents/skills/tauri/SKILL.md)** 의
+> 원인·셋업·검증·트러블슈팅의 **단일 출처는 [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md)** 의
 > "macOS 코드 서명" 절이다.
 
 ## 향후 개발 시 유의 사항
@@ -144,9 +144,9 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
    - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
 2. **다른 도구 사용량 연동**: **Claude Code·Codex** 는 구현 완료([사용량 추적](#사용량-추적)).
-   남은 작업은 **Antigravity** 의 사용량 소스를 조사해 같은 provider 구조로 추가하는 것([`usage` 스킬](.agents/skills/usage/SKILL.md)의 추가 절차 참고).
+   남은 작업은 **Antigravity** 의 사용량 소스를 조사해 같은 provider 구조로 추가하는 것([`hb-usage` 스킬](.agents/skills/usage/SKILL.md)의 추가 절차 참고).
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
-   `permissions` 에 명시해야 동작함(자세한 절차는 [`tauri` 스킬](.agents/skills/tauri/SKILL.md)).
+   `permissions` 에 명시해야 동작함(자세한 절차는 [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md)).
    `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
 4. **자동 생성/빌드 산출물**: `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 커밋 대상 아님.
 
@@ -158,7 +158,7 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 ```
 
-> 카테고리 선택 기준·예시·작성 절차의 **단일 출처는 [`commit-message` 스킬](.agents/skills/commit-message/SKILL.md)** 이다.
+> 카테고리 선택 기준·예시·작성 절차의 **단일 출처는 [`hb-commit` 스킬](.agents/skills/commit-message/SKILL.md)** 이다.
 > 커밋 메시지를 작성할 때는 이 스킬을 따른다.
 
 ## 버전 관리
@@ -182,15 +182,15 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 ### 릴리스 절차
 
-이 절차는 [`version-bump` 스킬](#스킬skills)로 자동화되어 있다. **버전업 시 스킬을 사용한다.**
+이 절차는 [`hb-version` 스킬](#스킬skills)로 자동화되어 있다. **버전업 시 스킬을 사용한다.**
 
 1. 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)의 버전을 동일하게 맞춘다.
    → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
-2. [`commit-message` 스킬](#스킬skills)을 따라 `chore: x.y.z 버전업` 으로 커밋한다.
+2. [`hb-commit` 스킬](#스킬skills)을 따라 `chore: x.y.z 버전업` 으로 커밋한다.
 3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
-> 현재 버전: **`0.1.3`** (스킬 인프라 정비: commit-message·version-bump, 심볼릭 링크 문서화).
+> 현재 버전: **`0.1.3`** (스킬 인프라 정비: hb-commit·hb-version, 심볼릭 링크 문서화).
 
 ## 스킬(Skills)
 
@@ -227,10 +227,10 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 | 스킬 | 출처(AGENTS.md 섹션) | 용도 | 호출 시점 |
 | --- | --- | --- | --- |
-| [`tauri`](.agents/skills/tauri/SKILL.md) | [개발 환경 및 실행](#개발-환경-및-실행) | Tauri 백엔드: 실행/빌드, invoke 통신, 커맨드 추가, 권한(ACL) | Tauri/Rust 백엔드를 만질 때 |
-| [`usage`](.agents/skills/usage/SKILL.md) | [사용량 추적](#사용량-추적) | provider별 잔여 사용량 fetch(소스·인증·폴링/rate limit·provider 추가) | 사용량 추적 기능을 만지거나 provider를 추가할 때 |
-| [`commit-message`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 작성 | 커밋 메시지를 쓸 때마다 |
-| [`version-bump`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
+| [`hb-tauri`](.agents/skills/tauri/SKILL.md) | [개발 환경 및 실행](#개발-환경-및-실행) | Tauri 백엔드: 실행/빌드, invoke 통신, 커맨드 추가, 권한(ACL) | Tauri/Rust 백엔드를 만질 때 |
+| [`hb-usage`](.agents/skills/usage/SKILL.md) | [사용량 추적](#사용량-추적) | provider별 잔여 사용량 fetch(소스·인증·폴링/rate limit·provider 추가) | 사용량 추적 기능을 만지거나 provider를 추가할 때 |
+| [`hb-commit`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 작성 | 커밋 메시지를 쓸 때마다 |
+| [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
 
-**연관**: `usage` 는 `tauri` 의 커맨드·invoke·ACL·코드 서명 패턴 위에 올라간다.
-`version-bump` 의 커밋 단계는 `commit-message` 스킬을 호출해 메시지를 작성한다.
+**연관**: `hb-usage` 는 `hb-tauri` 의 커맨드·invoke·ACL·코드 서명 패턴 위에 올라간다.
+`hb-version` 의 커밋 단계는 `hb-commit` 스킬을 호출해 메시지를 작성한다.

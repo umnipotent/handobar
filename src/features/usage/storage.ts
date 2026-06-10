@@ -50,3 +50,12 @@ export function loadCollapsed(key: string, defaultValue = false): boolean {
 export function saveCollapsed(key: string, collapsed: boolean): void {
   localStorage.setItem(key, collapsed ? "1" : "0");
 }
+
+// 자유 메모 텍스트 (provider별). key는 provider 저장 키 기반으로 구성.
+export function loadMemo(key: string): string {
+  return localStorage.getItem(key) ?? "";
+}
+
+export function saveMemo(key: string, value: string): void {
+  localStorage.setItem(key, value);
+}

@@ -1,5 +1,5 @@
 ---
-name: usage
+name: hb-usage
 description: How handobar fetches AI tool remaining usage (잔여 사용량) for each provider — the src-tauri/src/usage/ subsystem with shared domain model + cache and per-provider modules (claude, codex), plus the src/features/usage/ shared frontend (hook/panel/gateway) with provider descriptors. Claude Code reads an OAuth token from the OS keychain and calls Anthropic's /api/oauth/usage (remaining = 100 − utilization) with 429/Retry-After backoff; Codex reads the latest ~/.codex/sessions rollout's rate_limits snapshot (no network/auth). Use this skill whenever you work on usage tracking, add a usage provider, or touch usage endpoints/auth/keychain, the polling interval, 429 handling, or the usage UI. Single source of truth for the usage feature (Antigravity is not yet implemented).
 ---
 

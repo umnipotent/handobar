@@ -17,6 +17,12 @@ export function formatReset(iso: string): string {
   return h > 0 ? USAGE_COPY.reset.hoursMinutes(h, m) : USAGE_COPY.reset.minutes(m);
 }
 
+export function formatClock(timestamp: number): string {
+  const date = new Date(timestamp);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 export function formatKstIsoWithoutTimezone(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;

@@ -1,8 +1,10 @@
-import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type PointerEvent } from "react";
 import { CLAUDE_USAGE_PROVIDER } from "./features/claudeUsage/provider";
 import { CODEX_USAGE_PROVIDER } from "./features/codexUsage/provider";
 import { UsagePanel, type UsageProvider } from "./features/usage/UsagePanel";
+import { StatusBar } from "./features/usage/StatusBar";
 import { loadPanelOrder, savePanelOrder } from "./features/usage/storage";
+import type { ProviderCriticalStatus } from "./features/usage/types";
 import "./App.css";
 
 const USAGE_PROVIDERS = [CLAUDE_USAGE_PROVIDER, CODEX_USAGE_PROVIDER] as const;
@@ -30,7 +32,32 @@ function App() {
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const [dropTargetPanelId, setDropTargetPanelId] = useState<string | null>(null);
   const panelDragRef = useRef<PanelDragState | null>(null);
+  const [criticalStatuses, setCriticalStatuses] = useState<Record<string, ProviderCriticalStatus>>({});
   const orderedProviders = useMemo(() => sortProvidersByOrder(USAGE_PROVIDERS, panelOrder), [panelOrder]);
+
+  const handleCriticalChange = useCallback(
+    (providerId: string, status: ProviderCriticalStatus | null) => {
+      setCriticalStatuses((current) => {
+        if (status === null) {
+          if (!(providerId in current)) return current;
+          const next = { ...current };
+          delete next[providerId];
+          return next;
+        }
+        return { ...current, [providerId]: status };
+      });
+    },
+    [],
+  );
+
+  // 패널 순서대로 정렬된 임계 상태 목록 (상태 표시줄용).
+  const orderedCriticalStatuses = useMemo(
+    () =>
+      orderedProviders
+        .map((provider) => criticalStatuses[provider.id])
+        .filter((status): status is ProviderCriticalStatus => status != null),
+    [orderedProviders, criticalStatuses],
+  );
 
   function movePanel(draggedId: string, targetId: string) {
     if (draggedId === targetId) return;
@@ -104,7 +131,9 @@ function App() {
   }
 
   return (
-    <main className="container">
+    <>
+      <StatusBar statuses={orderedCriticalStatuses} />
+      <main className="container">
       {orderedProviders.map((provider) => (
         <div
           key={provider.id}
@@ -121,10 +150,11 @@ function App() {
           onPointerUp={resetPanelDrag}
           onPointerCancel={resetPanelDrag}
         >
-          <UsagePanel {...provider} />
+          <UsagePanel {...provider} onCriticalChange={handleCriticalChange} />
         </div>
       ))}
-    </main>
+      </main>
+    </>
   );
 }
 

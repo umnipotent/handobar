@@ -1,5 +1,5 @@
 ---
-name: version-bump
+name: hb-version
 description: Bump the handobar app version across all source-of-truth files (package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, Cargo.lock), then commit and tag the release. Use this skill whenever the user wants to release a new version, bump/raise the version number, cut a release, tag a version, or mentions a version number like "0.0.2"/"v1.0" in the context of shipping handobar — even if they don't explicitly say "use the version skill". Keeping the four files in sync by hand is error-prone, so always route version changes through here.
 ---
 

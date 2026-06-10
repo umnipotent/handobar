@@ -5,6 +5,20 @@ export interface UsageWindow {
   resets_at: string;
 }
 
+// 가능 사용량이 임계값(20%) 이하인 한 윈도우. 상태 표시줄이 갱신 남은 시간을 보여줄 때 사용한다.
+export interface CriticalWindowStatus {
+  windowTitle: string;
+  remaining: number;
+  resetsAt: string;
+}
+
+// 한 provider가 보고하는 임계 윈도우 목록. 비어 있으면 임계 상태가 아니다.
+export interface ProviderCriticalStatus {
+  providerId: string;
+  providerTitle: string;
+  windows: CriticalWindowStatus[];
+}
+
 export interface Usage {
   five_hour: UsageWindow | null;
   seven_day: UsageWindow | null;
