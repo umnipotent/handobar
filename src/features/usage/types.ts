@@ -12,5 +12,7 @@ export interface Usage {
   model: string | null;
   fetched_at: string;
   retry_after_secs?: number;
+  /** API 실패 후 캐시 폴백으로 반환된 데이터. 없거나 false면 신선한 데이터. */
+  is_stale?: boolean;
 }
 

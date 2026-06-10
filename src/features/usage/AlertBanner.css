@@ -1,13 +1,13 @@
 .alert-banner {
   margin: 0 0 12px;
   padding: 8px 12px;
-  font-size: 12px;
-  border-radius: 10px;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-weight: 500;
+  font-weight: var(--font-weight-regular);
   line-height: 1.4;
 }
 
@@ -22,17 +22,17 @@
 }
 
 .alert-banner-close {
-  width: 20px;
-  height: 20px;
+  width: var(--height-icon-btn);
+  height: var(--height-icon-btn);
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: inherit;
   background: transparent;
-  line-height: 20px;
+  line-height: var(--height-icon-btn);
   flex: 0 0 auto;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,5 +43,13 @@
 }
 
 .alert-banner.warning .alert-banner-close:hover {
+  background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+}
+.alert-banner.info {
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+}
+
+.alert-banner.info .alert-banner-close:hover {
   background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
 }

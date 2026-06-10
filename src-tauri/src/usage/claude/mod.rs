@@ -51,7 +51,10 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
         Err(UsageApiError::RateLimited(retry_after)) => {
             return cache::remember_retry(&CLAUDE_CACHE, retry_after);
         }
-        Err(err) => return Err(String::from(err)),
+        Err(err) => {
+            // 네트워크·파싱 오류: 직전 성공 캐시가 있으면 stale로 반환, 없으면 Err.
+            return cache::remember_fallback_stale(&CLAUDE_CACHE, String::from(err));
+        }
     };
 
     let usage = UsageSnapshot {
@@ -61,6 +64,7 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
         model: read_claude_model(),
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
+        is_stale: false,
     };
 
     cache::remember_success(&CLAUDE_CACHE, &usage);

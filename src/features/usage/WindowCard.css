@@ -1,7 +1,7 @@
 .card {
   padding: 20px;
   border: 1px solid #ddd;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: white;
   margin-bottom: 14px;
 }
@@ -19,22 +19,22 @@
 }
 
 .title {
-  font-size: 14px;
-  font-weight: 600;
-  font-family: 'Paperlogy', sans-serif;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-title);
 }
 
 .hint {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   opacity: 0.8;
 }
 
 .remaining {
   margin-top: 8px;
-  font-size: 30px;
-  font-weight: 700;
-  font-family: 'Paperlogy', sans-serif;
+  font-size: var(--font-size-hero);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-title);
   font-variant-numeric: tabular-nums;
   display: flex;
 }
@@ -52,7 +52,7 @@
 .bar {
   margin-top: 12px;
   height: 7px;
-  border-radius: 4px;
+  border-radius: calc(var(--radius-sm) / 2);
   background: #ececef;
   overflow: hidden;
 }
@@ -78,7 +78,7 @@
 
 .reset {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   opacity: 0.85;
   display: grid;
@@ -88,13 +88,13 @@
 
 .reset time {
   color: var(--color-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-medium);
 }
 
 .skeleton-line {
   width: 210px;
-  height: 12px;
-  border-radius: 4px;
+  height: var(--font-size-sm);
+  border-radius: calc(var(--radius-sm) / 2);
   background: linear-gradient(90deg, #ececef 0%, #f7f7f8 48%, #ececef 100%);
 }
 

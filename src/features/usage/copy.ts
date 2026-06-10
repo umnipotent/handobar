@@ -4,9 +4,10 @@ export const USAGE_COPY = {
   cooldownMessage: (seconds: number) =>
     `요청 제한 중 · ${seconds}초 후 자동 재시도`,
   dismissCooldownLabel: "요청 제한 메시지 닫기",
+  staleDataMessage: "API에 일시적으로 접근할 수 없어 이전 데이터를 표시합니다",
   warnings: {
-    fastMode: "fast mode 비활성화를 추천합니다",
-    subModel: "복잡한 작업 지시를 지양하고 세션 상황을 계속 동기화하세요",
+    warning: "슬슬 토큰을 절약하는 세팅으로 바꾸셔야 합니다",
+    danger: "언제 작업이 멈춰도 이상하지 않습니다.",
   },
 
   dismiss: {

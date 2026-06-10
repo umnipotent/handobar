@@ -39,6 +39,10 @@ pub struct UsageSnapshot {
     /// rate limit 중이면 남은 대기 초(있을 때만 직렬화). Codex는 항상 `None`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_after_secs: Option<u64>,
+    /// API 실패 후 캐시 폴백으로 반환된 데이터임을 나타냄. false(기본)는 직렬화 생략.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default)]
+    pub is_stale: bool,
 }
 
 #[cfg(test)]

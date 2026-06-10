@@ -77,6 +77,25 @@ pub(super) fn remember_success(cache: &Mutex<Cache>, usage: &UsageSnapshot) {
     cache.retry_until = None;
 }
 
+/// API/파싱 오류 시 직전 성공 캐시를 stale로 반환한다(retry_until 갱신 없음).
+///
+/// 429(`remember_retry`)와 달리 backoff 창을 설정하지 않아 다음 주기에 재시도한다.
+/// 캐시가 비어있으면 원래 오류 메시지를 그대로 전달한다.
+pub(super) fn remember_fallback_stale(
+    cache: &Mutex<Cache>,
+    original_err: String,
+) -> Result<UsageSnapshot, String> {
+    let cache = cache.lock().unwrap();
+    match &cache.last {
+        Some(last) => {
+            let mut snapshot = last.clone();
+            snapshot.is_stale = true;
+            Ok(snapshot)
+        }
+        None => Err(original_err),
+    }
+}
+
 fn stale_or_error(cache: &Cache, retry_after: u64) -> Result<UsageSnapshot, String> {
     match &cache.last {
         Some(last) => {
@@ -124,6 +143,7 @@ mod tests {
             model: None,
             fetched_at: "2026-06-10T14:00:00Z".to_string(),
             retry_after_secs: None,
+            is_stale: false,
         }
     }
 
@@ -171,5 +191,22 @@ mod tests {
         remember_success(cache, &mock_usage());
         let stale = remember_retry(cache, 0).unwrap();
         assert_eq!(stale.retry_after_secs, Some(DEFAULT_RETRY_SECS));
+    }
+
+    #[test]
+    fn test_fallback_stale_with_cache() {
+        let cache = &TEST_CACHE;
+        reset_cache_for_test(cache);
+
+        // 캐시 없으면 원래 에러 전달
+        let err = remember_fallback_stale(cache, "파싱 실패".to_string());
+        assert!(err.is_err());
+        assert_eq!(err.unwrap_err(), "파싱 실패");
+
+        // 캐시 있으면 is_stale=true인 스냅샷 반환
+        remember_success(cache, &mock_usage());
+        let fallback = remember_fallback_stale(cache, "파싱 실패".to_string()).unwrap();
+        assert!(fallback.is_stale);
+        assert_eq!(fallback.retry_after_secs, None);
     }
 }

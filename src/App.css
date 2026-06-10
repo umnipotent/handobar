@@ -1,6 +1,7 @@
 @import "./assets/fonts/fonts.css";
 
 :root {
+  /* Color Palette */
   --color-primary: #29335c;
   --color-danger: #db2b39;
   --color-warning: #f3a712;
@@ -11,7 +12,36 @@
   --color-bg-primary-light: #ecebf3;
   --color-border-primary-light: #c2c0db;
 
-  font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Typography - Font Families */
+  --font-family-body: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-title: 'Paperlogy', sans-serif;
+
+  /* Typography - Font Sizes */
+  --font-size-hero: 30px;         /* 사용량 숫자 등 아주 큰 텍스트 */
+  --font-size-lg: 18px;           /* h1, h2 타이틀 */
+  --font-size-md: 14px;           /* 카드 제목 등 중간 강조 */
+  --font-size-base: 13px;         /* 기본 본문, 버튼, 라벨 등 */
+  --font-size-sm: 12px;           /* 배너 텍스트, 리셋 정보 등 */
+  --font-size-xs: 11px;           /* 배지, 힌트, 보조 타임스탬프 등 */
+
+  /* Typography - Font Weights */
+  --font-weight-bold: 800;
+  --font-weight-semibold: 700;
+  --font-weight-medium: 600;
+  --font-weight-regular: 500;
+
+  /* Border Radii */
+  --radius-lg: 14px;              /* 카드 컨테이너 등 */
+  --radius-md: 12px;              /* 메인 패널 쉘, 중간 박스 등 */
+  --radius-sm: 8px;               /* 버튼, 드롭다운 등 */
+  --radius-full: 999px;           /* 배지, 알약형 버튼 등 */
+
+  /* Layout Heights */
+  --height-control: 34px;         /* 인풋, 버튼, 드롭다운 고정 높이 */
+  --height-badge: 20px;
+  --height-icon-btn: 20px;
+
+  font-family: var(--font-family-body);
   color: #222;
   background: #f7f7f8;
 }
@@ -36,7 +66,7 @@ body {
   flex: 0 1 360px;
   padding: 10px;
   border: 1px dashed #cfd0d7;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
   cursor: grab;
   transition:
@@ -66,7 +96,7 @@ body {
 
 h1 {
   margin: 0;
-  font-size: 18px;
-  font-family: 'Paperlogy', sans-serif;
-  font-weight: 800;
+  font-size: var(--font-size-lg);
+  font-family: var(--font-family-title);
+  font-weight: var(--font-weight-bold);
 }

@@ -197,6 +197,7 @@ fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
         model,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
+        is_stale: false,
     }
 }
 

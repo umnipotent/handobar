@@ -7,7 +7,6 @@ import { WindowCard } from "./WindowCard";
 import { AlertBanner } from "./AlertBanner";
 import "./UsagePanel.css";
 
-
 export interface UsageProvider {
   id: string;
   title: string;
@@ -56,9 +55,13 @@ function RefreshIcon({ className }: { className?: string }) {
 }
 
 // 한 provider의 잔여 사용량 패널. provider별로 다른 것은 제목·게이트웨이·저장 키뿐이다.
-export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider) {
+export function UsagePanel({
+  title,
+  gateway,
+  storageKey,
+  webUrl,
+}: UsageProvider) {
   const {
-
     usage,
     error,
     loading,
@@ -87,10 +90,6 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
     }
   };
 
-
-
-
-
   return (
     <section className="panel">
       <header className="top">
@@ -104,8 +103,12 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
         </div>
         {(usage?.model || usage?.subscription || webUrl) && (
           <div className="header-sub-row">
-            {usage?.model && <span className="badge model-badge">{usage.model}</span>}
-            {usage?.subscription && <span className="badge">{usage.subscription}</span>}
+            {usage?.model && (
+              <span className="badge model-badge">{usage.model}</span>
+            )}
+            {usage?.subscription && (
+              <span className="badge">{usage.subscription}</span>
+            )}
             {webUrl && (
               <button
                 type="button"
@@ -122,7 +125,9 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
       {usage?.fetched_at && (
         <p className="last-refresh">
           {USAGE_COPY.lastRefreshLabel}{" "}
-          <time dateTime={usage.fetched_at}>{formatKstIsoWithoutTimezone(usage.fetched_at)}</time>
+          <time dateTime={usage.fetched_at}>
+            {formatKstIsoWithoutTimezone(usage.fetched_at)}
+          </time>
         </p>
       )}
 
@@ -135,6 +140,10 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
         />
       )}
 
+      {usage?.is_stale && !error && (
+        <AlertBanner message={USAGE_COPY.staleDataMessage} type="info" />
+      )}
+
       {cooling && (
         <AlertBanner
           message={USAGE_COPY.cooldownMessage(cooldownLeft)}
@@ -145,7 +154,7 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
       )}
       {showingFastModeWarning && (
         <AlertBanner
-          message={USAGE_COPY.warnings.fastMode}
+          message={USAGE_COPY.warnings.warning}
           type="danger"
           onDismiss={dismissFastModeWarning}
           dismissLabel={USAGE_COPY.dismiss.warning}
@@ -153,13 +162,12 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
       )}
       {showingSubModelWarning && (
         <AlertBanner
-          message={USAGE_COPY.warnings.subModel}
+          message={USAGE_COPY.warnings.danger}
           type="danger"
           onDismiss={dismissSubModelWarning}
           dismissLabel={USAGE_COPY.dismiss.warning}
         />
       )}
-
 
       <WindowCard
         title={USAGE_COPY.windows.fiveHour.title}
@@ -177,7 +185,10 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
       <div className="controls">
         <label>
           {USAGE_COPY.controls.intervalLabel}
-          <select value={intervalMin} onChange={(e) => setIntervalMin(Number(e.target.value))}>
+          <select
+            value={intervalMin}
+            onChange={(e) => setIntervalMin(Number(e.target.value))}
+          >
             {intervalOptions.map((m) => (
               <option key={m} value={m}>
                 {USAGE_COPY.controls.minuteOption(m)}
@@ -188,10 +199,14 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
         <button
           type="button"
           className="refresh-btn"
-          onClick={() => refresh({ force: shouldForceManualRefresh, manual: true })}
+          onClick={() =>
+            refresh({ force: shouldForceManualRefresh, manual: true })
+          }
           disabled={loading || !canManualRefresh}
         >
-          <RefreshIcon className={`refresh-icon ${loading ? "spinning" : ""}`} />
+          <RefreshIcon
+            className={`refresh-icon ${loading ? "spinning" : ""}`}
+          />
           {loading
             ? USAGE_COPY.controls.loadingButton
             : cooling
@@ -201,9 +216,6 @@ export function UsagePanel({ title, gateway, storageKey, webUrl }: UsageProvider
               : USAGE_COPY.controls.refreshButton}
         </button>
       </div>
-
-
     </section>
   );
 }
-

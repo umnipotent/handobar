@@ -4,7 +4,7 @@ import "./AlertBanner.css";
 
 export interface AlertBannerProps {
   message: ReactNode;
-  type: "danger" | "warning";
+  type: "danger" | "warning" | "info";
   onDismiss?: () => void;
   dismissLabel?: string;
 }
