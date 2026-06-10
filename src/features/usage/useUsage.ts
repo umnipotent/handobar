@@ -25,6 +25,8 @@ export interface UsageState {
   showingManualRefreshSkeleton: boolean;
   refresh: (options?: { force?: boolean; manual?: boolean }) => void;
   intervalOptions: number[];
+  showingFastModeWarning: boolean;
+  dismissFastModeWarning: () => void;
 }
 
 const intervalOptions = Array.from({ length: MAX_INTERVAL }, (_, i) => i + 1);
@@ -52,6 +54,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const [cooldownStartedAt, setCooldownStartedAt] = useState(0);
   const [cooldownVisible, setCooldownVisible] = useState(false);
   const [showingManualRefreshSkeleton, setShowingManualRefreshSkeleton] = useState(false);
+  const [fastModeWarningDismissed, setFastModeWarningDismissed] = useState(false);
   const [, forceClockTick] = useState(0);
 
   const intervalRef = useRef(intervalMin);
@@ -97,6 +100,10 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
       try {
         const nextUsage = await gateway.fetchUsage({ force: options?.force });
         setUsage(nextUsage);
+
+        if (nextUsage.five_hour && nextUsage.five_hour.remaining > 20) {
+          setFastModeWarningDismissed(false);
+        }
 
         const retryAfterSecs = normalizeRetryAfterSecs(nextUsage.retry_after_secs);
         if (retryAfterSecs !== null) {
@@ -179,6 +186,17 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const canManualRefresh = !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
   const shouldForceManualRefresh = internalCooling && canManualRefresh;
 
+  const isFastModeWarningTarget =
+    usage !== null &&
+    usage.five_hour !== null &&
+    usage.five_hour.remaining <= 20;
+
+  const showingFastModeWarning = isFastModeWarningTarget && !fastModeWarningDismissed;
+
+  const dismissFastModeWarning = useCallback(() => {
+    setFastModeWarningDismissed(true);
+  }, []);
+
   return {
     usage,
     error,
@@ -193,5 +211,7 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
     showingManualRefreshSkeleton,
     refresh,
     intervalOptions,
+    showingFastModeWarning,
+    dismissFastModeWarning,
   };
 }

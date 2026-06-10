@@ -5,6 +5,7 @@ import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
 
 export interface UsageProvider {
+  id: string;
   title: string;
   gateway: UsageGateway;
   storageKey: string;
@@ -26,6 +27,8 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
     showingManualRefreshSkeleton,
     refresh,
     intervalOptions,
+    showingFastModeWarning,
+    dismissFastModeWarning,
   } = useUsage(gateway, storageKey);
 
   return (
@@ -51,6 +54,19 @@ export function UsagePanel({ title, gateway, storageKey }: UsageProvider) {
             type="button"
             onClick={dismissCooldown}
             aria-label={USAGE_COPY.dismissCooldownLabel}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {showingFastModeWarning && (
+        <div className="fast-mode-warning" role="status">
+          <span>fast mode를 꺼주세요</span>
+          <button
+            className="fast-mode-warning-close"
+            type="button"
+            onClick={dismissFastModeWarning}
+            aria-label="경고 닫기"
           >
             ×
           </button>

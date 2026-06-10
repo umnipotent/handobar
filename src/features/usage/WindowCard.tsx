@@ -11,10 +11,18 @@ interface WindowCardProps {
 
 export function WindowCard({ title, hint, data, skeleton = false }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
-  const low = remaining !== null && remaining <= 15;
+  const isDanger = remaining !== null && remaining <= 20;
+  const isWarning = remaining !== null && remaining <= 50 && remaining > 20;
   const empty = data === null || skeleton;
   const resetRelative = data ? formatReset(data.resets_at) : "";
   const resetExact = data ? formatResetExactTime(data.resets_at) : "";
+
+  let statusClass = "";
+  if (isDanger) {
+    statusClass = "danger";
+  } else if (isWarning) {
+    statusClass = "warning";
+  }
 
   return (
     <section className={`card ${empty ? "empty" : ""}`}>
@@ -25,12 +33,12 @@ export function WindowCard({ title, hint, data, skeleton = false }: WindowCardPr
 
       {!empty && (
         <>
-          <div className={`remaining ${low ? "low" : ""}`}>
+          <div className={`remaining ${statusClass}`}>
             {remaining}%
             <span className="remaining-label">{USAGE_COPY.usage.remainingLabel}</span>
           </div>
           <div className="bar">
-            <div className={`bar-fill ${low ? "low" : ""}`} style={{ width: `${remaining}%` }} />
+            <div className={`bar-fill ${statusClass}`} style={{ width: `${remaining}%` }} />
           </div>
           <div className="reset">
             {resetRelative && <span>{resetRelative}</span>}

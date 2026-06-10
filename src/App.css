@@ -14,15 +14,56 @@ body {
 }
 
 .container {
-  width: 360px;
+  width: 100%;
   padding: 24px;
   box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.panel-shell {
+  width: min(360px, 100%);
+  flex: 0 1 360px;
+  padding: 10px;
+  border: 1px dashed #cfd0d7;
+  border-radius: 12px;
+  box-sizing: border-box;
+  cursor: grab;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.panel-shell:hover {
+  border-color: #aeb0bb;
+  background: #fbfbfc;
+}
+
+.panel-shell.drop-target {
+  border-color: #6b4eff;
+  background: #f6f3ff;
+}
+
+.panel-shell.dragging {
+  opacity: 0.6;
+  border-color: #6b4eff;
+  background: #f6f3ff;
+  cursor: grabbing;
+  user-select: none;
+}
+
+.panel {
+  height: 100%;
 }
 
 .panel + .panel {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #e3e3e6;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .top {
@@ -106,8 +147,13 @@ h2 {
   color: #888;
 }
 
-.remaining.low {
+.remaining.low,
+.remaining.danger {
   color: #c0392b;
+}
+
+.remaining.warning {
+  color: #d35400;
 }
 
 .bar {
@@ -128,8 +174,13 @@ h2 {
   background: linear-gradient(90deg, #ececef 0%, #f7f7f8 48%, #ececef 100%);
 }
 
-.bar-fill.low {
+.bar-fill.low,
+.bar-fill.danger {
   background: #c0392b;
+}
+
+.bar-fill.warning {
+  background: #e67e22;
 }
 
 .reset {
@@ -234,3 +285,36 @@ button:disabled {
   opacity: 0.6;
   cursor: default;
 }
+
+.fast-mode-warning {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #8a2a1d;
+  background: #fdecea;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.fast-mode-warning-close {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #8a2a1d;
+  background: transparent;
+  line-height: 20px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.fast-mode-warning-close:hover {
+  background: rgba(138, 42, 29, 0.12);
+}
+
