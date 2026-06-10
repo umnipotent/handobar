@@ -1,18 +1,15 @@
+mod usage;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager,
 };
 
-#[tauri::command]
-fn get_usage_summary() -> String {
-    "OpenAI 72% · Claude 41% · reset in 3h".to_string()
-}
-
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_usage_summary])
+        .invoke_handler(tauri::generate_handler![usage::get_claude_usage])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let _ = window.hide();

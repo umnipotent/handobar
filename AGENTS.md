@@ -33,7 +33,8 @@ handobar/
 │  └─ assets/
 ├─ src-tauri/            # Tauri / Rust 백엔드
 │  ├─ src/
-│  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + #[tauri::command] (get_usage_summary)
+│  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + 커맨드 등록
+│  │  ├─ usage.rs       # Claude Code 사용량 집계 (~/.claude/projects JSONL → 5h/7d)
 │  │  └─ main.rs        # 바이너리 진입점 → handobar_lib::run()
 │  ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar)
 │  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
@@ -89,8 +90,10 @@ pnpm build            # 프론트엔드만 빌드 (tsc + vite build)
 
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
    - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
-2. **사용량 데이터 수집**: 현재 `get_usage_summary` 는 더미 문자열을 반환한다. Codex / Claude Code / Antigravity 각각의
-   사용량 소스(설정 파일, API, 로그 등)를 조사해 Rust 백엔드에서 읽어와 프론트로 전달하는 구조로 교체.
+2. **사용량 데이터 수집**: **Claude Code** 는 구현됨 — `usage.rs` 가 `~/.claude/projects/**/*.jsonl`
+   트랜스크립트의 `message.usage` 토큰을 롤링 5시간/7일로 집계한다(`get_claude_usage` 커맨드).
+   - 남은 작업: **Codex / Antigravity** 의 사용량 소스를 조사해 같은 방식으로 추가.
+   - 한계: JSONL 합산은 서버 측 실제 한도와 정확히 일치하지 않는 근사치다(캐시 토큰 포함).
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함. `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
 4. **자동 생성/빌드 산출물**: `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 커밋 대상 아님.
