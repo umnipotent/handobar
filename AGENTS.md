@@ -89,17 +89,11 @@ pnpm tauri build                     # 프로덕션 빌드 (.app / 설치 파일
   - **백엔드 (Rust)**: `cargo test` (또는 `cargo test --manifest-path src-tauri/Cargo.toml`)
   - **프론트엔드 (Vitest)**: `pnpm test` (또는 `npx vitest run`)
 
-- **주요 테스트 영역**:
-  - **백엔드**:
-    - [model.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/model.rs): 잔여=100-used 매핑 및 clamp 로직 검증.
-    - [cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs): 상태 격리를 적용한 캐싱/stale 429 backoff 흐름 검증.
-    - [claude/api.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/claude/api.rs): Retry-After 파싱·utilization 매핑. [codex/source.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/codex/source.rs): rollout rate_limits 파싱.
-  - **프론트엔드**:
-    - [format.test.ts](file:///Users/morgan/Development/handobar/src/features/usage/format.test.ts): `formatReset` 및 타임존 보정을 다루는 `formatKstIsoWithoutTimezone` 검증 (가상 타이머 활용).
-    - [storage.test.ts](file:///Users/morgan/Development/handobar/src/features/usage/storage.test.ts): localStorage 입출력·boundary clamp·provider별 키 격리 검증 (LocalStorage Mock 활용).
+주요 테스트 영역은 usage 모델/캐시/provider 파싱, 프론트엔드 포맷·localStorage 격리다. 특히 상태를 가진
+백엔드 캐시 테스트는 전역 테스트 캐시를 공유하지 않고 테스트별 로컬 `Mutex<Cache>` 로 격리한다.
 
-> 테스트 작성 전략, 시간 Mocking 및 전역 자원 모의 구현(Mocking) 가이드 등 상세한 가이드의 **단일 출처는
-> [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md) 및 [`hb-usage` 스킬](.agents/skills/usage/SKILL.md)** 에 구체화되어 있다.
+> 테스트 작성 전략, 시간 Mocking, localStorage Mocking, 상태 격리 및 레이스 컨디션 방지 가이드의
+> **단일 출처는 [`hb-testing` 스킬](.agents/skills/testing/SKILL.md)** 이다.
 
 ## 사용량 추적
 
@@ -171,7 +165,7 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 ### 버전 단일 출처(Single Source of Truth)
 
-버전 번호는 아래 **네 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
+버전 번호는 아래 **다섯 곳을 항상 동일하게** 유지해야 한다. 한 곳만 올리면 불일치가 발생한다.
 
 | 파일 | 필드 |
 | --- | --- |
@@ -229,8 +223,10 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 | --- | --- | --- | --- |
 | [`hb-tauri`](.agents/skills/tauri/SKILL.md) | [개발 환경 및 실행](#개발-환경-및-실행) | Tauri 백엔드: 실행/빌드, invoke 통신, 커맨드 추가, 권한(ACL) | Tauri/Rust 백엔드를 만질 때 |
 | [`hb-usage`](.agents/skills/usage/SKILL.md) | [사용량 추적](#사용량-추적) | provider별 잔여 사용량 fetch(소스·인증·폴링/rate limit·provider 추가) | 사용량 추적 기능을 만지거나 provider를 추가할 때 |
+| [`hb-testing`](.agents/skills/testing/SKILL.md) | [유닛 테스트](#유닛-테스트) | Rust/Vitest 테스트 작성·실행, 캐시 상태 격리, fake timer/localStorage mock | 테스트를 추가·수정하거나 flaky/racy 테스트를 다룰 때 |
 | [`hb-commit`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 작성 | 커밋 메시지를 쓸 때마다 |
-| [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 네 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
+| [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 다섯 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
 
 **연관**: `hb-usage` 는 `hb-tauri` 의 커맨드·invoke·ACL·코드 서명 패턴 위에 올라간다.
+`hb-testing` 은 `hb-usage` 의 캐시·provider 테스트 정책을 구체화한다.
 `hb-version` 의 커밋 단계는 `hb-commit` 스킬을 호출해 메시지를 작성한다.

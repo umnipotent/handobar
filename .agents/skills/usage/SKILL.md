@@ -7,7 +7,7 @@ description: How handobar fetches AI tool remaining usage (잔여 사용량) for
 
 여러 AI 도구의 **잔여 사용량**을 같은 도메인 모델로 보여준다. provider별로 출처가 다르지만,
 공유 코어(도메인 모델·캐시) 위에 provider 모듈을 올려 **provider 추가 시 기존 코드를 수정하지 않는다**(OCP).
-커맨드 등록·invoke·ACL의 일반 패턴은 [`tauri`](../tauri/SKILL.md) 스킬을 따른다.
+커맨드 등록·invoke·ACL의 일반 패턴은 [`hb-tauri`](../tauri/SKILL.md) 스킬을 따른다.
 
 ## 구조
 
@@ -40,7 +40,7 @@ src/features/claudeUsage/provider.ts · codexUsage/provider.ts   # 얇은 provid
 | 응답 | `five_hour`/`seven_day` 의 `utilization`(0~100) + `resets_at` |
 
 - **잔여 = 100 − utilization**. 이미 로그인된 Claude Code 자격증명을 재사용(별도 로그인·갱신 없음).
-- 토큰 없음/만료/`401` → 한국어 로그인 안내. 첫 실행 시 macOS 키체인 프롬프트(서명은 [`tauri`](../tauri/SKILL.md) 코드 서명 절).
+- 토큰 없음/만료/`401` → 한국어 로그인 안내. 첫 실행 시 macOS 키체인 프롬프트(서명은 [`hb-tauri`](../tauri/SKILL.md) 코드 서명 절).
 
 ### Codex (`usage/codex/`)
 
@@ -92,7 +92,7 @@ src/features/claudeUsage/provider.ts · codexUsage/provider.ts   # 얇은 provid
 ### 백엔드 (Rust) — `cargo test`
 
 - **`model::tests` ([model.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/model.rs))**: `from_used_percent` 의 `100 - used` 계산과 `0~100` clamp.
-- **`cache::tests` ([cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs))**: 전용 `TEST_CACHE` 로 격리해 `before_fetch`/`remember_success`/`remember_retry`(stale + `retry_after_secs`, 빈 캐시 에러) 흐름.
+- **`cache::tests` ([cache.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/cache.rs))**: 테스트별 로컬 `Mutex<Cache>` 로 격리해 `before_fetch`/`remember_success`/`remember_retry`(stale + `retry_after_secs`, 빈 캐시 에러) 흐름. 전역 `TEST_CACHE` 와 리셋 함수는 병렬 테스트 레이스를 만들 수 있어 사용하지 않는다.
 - **`claude::api::tests` ([api.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/claude/api.rs))**: `Retry-After` 파싱(양수 필터), `utilization`→잔여 매핑.
 - **`codex::source::tests` ([source.rs](file:///Users/morgan/Development/handobar/src-tauri/src/usage/codex/source.rs))**: rollout 라인에서 `rate_limits` 추출·매핑(epoch→RFC3339), null 윈도우 무시.
 
@@ -103,4 +103,5 @@ src/features/claudeUsage/provider.ts · codexUsage/provider.ts   # 얇은 provid
 
 ## 연관 스킬
 
-- [`tauri`](../tauri/SKILL.md): 커맨드 등록 / invoke / ACL / macOS 코드 서명(키체인 접근).
+- [`hb-testing`](../testing/SKILL.md): Rust/Vitest 테스트 작성·실행, 캐시 상태 격리, fake timer/localStorage mock.
+- [`hb-tauri`](../tauri/SKILL.md): 커맨드 등록 / invoke / ACL / macOS 코드 서명(키체인 접근).
