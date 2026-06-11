@@ -5,6 +5,7 @@ export const USAGE_COPY = {
     ariaLabel: "상태 표시줄",
     clockLabel: "현재 시각",
     criticalsLabel: "갱신 임박 한도",
+    refreshAll: "일괄 새로고침",
     empty: "여유 있음",
     unknownReset: "리셋 시각 미상",
     // '5시간' 같은 윈도우 명칭은 혼란을 주므로 표시하지 않고 마감(리셋)만 보여준다.
