@@ -3,6 +3,7 @@
 //! Claude Code(네트워크+키체인)와 Codex(로컬 rollout 파일)는 출처가 다르지만,
 //! 프론트에는 동일한 잔여 사용량 스냅샷 형태로 노출한다. 두 provider가 공유하는 타입을 둔다.
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// 한 시간 윈도우의 **잔여** 사용량. 직렬화 필드명은 프론트 계약이므로 유지한다.
@@ -23,6 +24,20 @@ impl UsageWindow {
             remaining: (100.0 - used).clamp(0.0, 100.0),
             used,
             resets_at,
+        }
+    }
+
+    /// 리셋 시각(`resets_at`, RFC3339)이 `now` 기준 이미 지났으면 윈도우가 갱신된 것으로 보고
+    /// 사용량을 0(잔여 100%)으로 만들고 리셋 시각을 비운다(새 윈도우 시각은 알 수 없음).
+    /// `resets_at` 이 비어 있거나 RFC3339 파싱이 안 되면 그대로 둔다.
+    ///
+    /// provider 공통: Claude(API)·Codex(rollout) 모두 저장된 리셋 시각이 지난 구간을 같은 규칙으로 처리한다.
+    pub fn reset_if_elapsed(self, now: DateTime<Utc>) -> Self {
+        match DateTime::parse_from_rfc3339(&self.resets_at) {
+            Ok(reset) if reset.with_timezone(&Utc) <= now => {
+                UsageWindow::from_used_percent(0.0, String::new())
+            }
+            _ => self,
         }
     }
 }
@@ -66,5 +81,34 @@ mod tests {
             UsageWindow::from_used_percent(120.0, "t".to_string()).remaining,
             0.0
         );
+    }
+
+    fn at(rfc3339: &str) -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339(rfc3339).unwrap().with_timezone(&Utc)
+    }
+
+    #[test]
+    fn reset_if_elapsed_resets_passed_window() {
+        let w = UsageWindow::from_used_percent(90.0, "2026-06-10T08:00:00Z".to_string());
+        let after = w.reset_if_elapsed(at("2026-06-10T09:00:00Z"));
+        assert_eq!(after.used, 0.0);
+        assert_eq!(after.remaining, 100.0);
+        assert_eq!(after.resets_at, "");
+    }
+
+    #[test]
+    fn reset_if_elapsed_keeps_future_window() {
+        let w = UsageWindow::from_used_percent(90.0, "2026-06-10T10:00:00Z".to_string());
+        let after = w.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z"));
+        assert_eq!(after, w);
+    }
+
+    #[test]
+    fn reset_if_elapsed_ignores_empty_or_unparsable() {
+        let empty = UsageWindow::from_used_percent(90.0, String::new());
+        assert_eq!(empty.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")), empty);
+
+        let garbage = UsageWindow::from_used_percent(90.0, "not-a-date".to_string());
+        assert_eq!(garbage.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")), garbage);
     }
 }
