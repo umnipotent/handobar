@@ -59,3 +59,17 @@ export function loadMemo(key: string): string {
 export function saveMemo(key: string, value: string): void {
   localStorage.setItem(key, value);
 }
+
+// 트레이 표시 토글 저장 키 (provider별).
+export const showInTrayKey = (providerId: string) => `handobar.${providerId}.showInTray`;
+
+// 범용 boolean 저장 (트레이 토글 등).
+export function loadBool(key: string, defaultValue = false): boolean {
+  const stored = localStorage.getItem(key);
+  if (stored === null) return defaultValue;
+  return stored === "1";
+}
+
+export function saveBool(key: string, value: boolean): void {
+  localStorage.setItem(key, value ? "1" : "0");
+}

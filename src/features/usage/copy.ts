@@ -69,6 +69,10 @@ export const USAGE_COPY = {
   },
   controls: {
     intervalLabel: "갱신 주기",
+    trayToggle: {
+      off: "트레이 표시",
+      on: "트레이 표시 중",
+    },
     minuteOption: (minutes: number) => `${minutes}분`,
     loadingButton: "불러오는 중…",
     refreshButton: "새로고침",

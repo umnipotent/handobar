@@ -36,6 +36,13 @@ button {
   gap: 6px;
 }
 
+.header-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .header-title-area {
   display: flex;
   align-items: center;
@@ -61,6 +68,12 @@ button {
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+.provider-icon {
+  flex-shrink: 0;
+  color: inherit;
+  margin: 0 2px;
 }
 
 h2 {
@@ -228,4 +241,23 @@ h2 {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+}
+
+/* 트레이 표시 토글: 비활성은 배지 칩과 같은 톤, 활성은 primary 채움 */
+.tray-toggle-btn {
+  background: var(--color-bg-primary-light);
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.tray-toggle-btn:hover:not(.active) {
+  background: var(--color-bg-primary-light);
+  border-color: var(--color-border-primary-light);
+  color: var(--color-primary);
+}
+
+.tray-toggle-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
 }

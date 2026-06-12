@@ -11,11 +11,14 @@ import { AlertBanner } from "./AlertBanner";
 import type { CriticalWindowStatus, ProviderCriticalStatus } from "./types";
 import { loadCollapsed, loadMemo, saveCollapsed, saveMemo } from "./storage";
 import { resolveWindow, type NullWindowMeaning } from "./windowPolicy";
+import { ProviderIcon } from "./ProviderIcon";
+import type { ProviderGlyph } from "./providerGlyph";
 import "./UsagePanel.css";
 
 export interface UsageProvider {
   id: string;
   title: string;
+  glyph: ProviderGlyph;
   gateway: UsageGateway;
   storageKey: string;
   webUrl?: string;
@@ -26,6 +29,11 @@ export interface UsageProvider {
 interface UsagePanelProps extends UsageProvider {
   // 가능 사용량 20% 이하 윈도우를 상위(상태 표시줄)로 보고한다. 임계 아니면 null.
   onCriticalChange?: (providerId: string, status: ProviderCriticalStatus | null) => void;
+  // 트레이에 5h 잔여 표시 여부와 토글 콜백 (상위 App이 상태를 소유).
+  showInTray?: boolean;
+  onToggleShowInTray?: (providerId: string, next: boolean) => void;
+  // 5h 잔여(%)를 상위로 보고 (트레이 합성용). 값이 없으면 null.
+  onFiveHourRemainingChange?: (providerId: string, remaining: number | null) => void;
 }
 
 function DragHandleIcon() {
@@ -72,11 +80,15 @@ function RefreshIcon({ className }: { className?: string }) {
 export function UsagePanel({
   id,
   title,
+  glyph,
   gateway,
   storageKey,
   webUrl,
   nullWindowMeaning = "unknown",
   onCriticalChange,
+  showInTray = false,
+  onToggleShowInTray,
+  onFiveHourRemainingChange,
 }: UsagePanelProps) {
   const {
     usage,
@@ -176,6 +188,14 @@ export function UsagePanel({
     return () => onCriticalChange?.(id, null);
   }, [id, onCriticalChange]);
 
+  // 5h 잔여를 상위(App)로 보고해 트레이 합성에 쓴다. 언마운트 시 null로 정리.
+  useEffect(() => {
+    onFiveHourRemainingChange?.(id, fiveHourRemaining);
+  }, [id, fiveHourRemaining, onFiveHourRemainingChange]);
+  useEffect(() => {
+    return () => onFiveHourRemainingChange?.(id, null);
+  }, [id, onFiveHourRemainingChange]);
+
   const handleOpenUrl = async (url: string) => {
     try {
       await openUrl(url);
@@ -192,10 +212,11 @@ export function UsagePanel({
             <div className="drag-handle" title="드래그하여 순서 변경">
               <DragHandleIcon />
             </div>
+            <ProviderIcon glyph={glyph} className="provider-icon" />
             <h2>{title}</h2>
           </div>
         </div>
-        {(usage?.model || usage?.subscription || webUrl) && (
+        {(usage?.model || usage?.subscription) && (
           <div className="header-sub-row">
             {usage?.model && (
               <span className="badge model-badge">{usage.model}</span>
@@ -203,17 +224,27 @@ export function UsagePanel({
             {usage?.subscription && (
               <span className="badge">{usage.subscription}</span>
             )}
-            {webUrl && (
-              <button
-                type="button"
-                className="meta-link-btn"
-                onClick={() => handleOpenUrl(webUrl)}
-              >
-                {USAGE_COPY.meta.directView}
-              </button>
-            )}
           </div>
         )}
+        <div className="header-actions-row">
+          {webUrl && (
+            <button
+              type="button"
+              className="meta-link-btn"
+              onClick={() => handleOpenUrl(webUrl)}
+            >
+              {USAGE_COPY.meta.directView}
+            </button>
+          )}
+          <button
+            type="button"
+            className={`meta-link-btn tray-toggle-btn${showInTray ? " active" : ""}`}
+            aria-pressed={showInTray}
+            onClick={() => onToggleShowInTray?.(id, !showInTray)}
+          >
+            {showInTray ? USAGE_COPY.controls.trayToggle.on : USAGE_COPY.controls.trayToggle.off}
+          </button>
+        </div>
       </header>
 
       {usage?.fetched_at && (
