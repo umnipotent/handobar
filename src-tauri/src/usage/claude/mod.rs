@@ -19,7 +19,9 @@ struct ClaudeSettings {
 
 fn read_claude_model() -> Option<String> {
     let home = std::env::var("HOME").ok()?;
-    let settings_path = std::path::PathBuf::from(home).join(".claude").join("settings.json");
+    let settings_path = std::path::PathBuf::from(home)
+        .join(".claude")
+        .join("settings.json");
     if !settings_path.is_file() {
         return None;
     }
@@ -64,6 +66,7 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
         seven_day: windows.seven_day.map(|w| w.reset_if_elapsed(now)),
         subscription: creds.subscription_type,
         model: read_claude_model(),
+        model_tags: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,

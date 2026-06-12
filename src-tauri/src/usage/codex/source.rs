@@ -179,7 +179,11 @@ fn read_codex_model() -> Option<String> {
         if line.starts_with("model") {
             let parts: Vec<&str> = line.split('=').collect();
             if parts.len() >= 2 {
-                let model_val = parts[1].trim().trim_matches('"').trim_matches('\'').to_string();
+                let model_val = parts[1]
+                    .trim()
+                    .trim_matches('"')
+                    .trim_matches('\'')
+                    .to_string();
                 return Some(model_val);
             }
         }
@@ -195,6 +199,7 @@ fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
         seven_day: limits.secondary.and_then(to_window),
         subscription,
         model,
+        model_tags: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,
@@ -202,9 +207,15 @@ fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
 }
 
 fn to_window(window: RateWindow) -> Option<UsageWindow> {
-    let resets_at = window.resets_at.and_then(epoch_to_rfc3339).unwrap_or_default();
+    let resets_at = window
+        .resets_at
+        .and_then(epoch_to_rfc3339)
+        .unwrap_or_default();
     // 리셋 시각이 지난 윈도우는 공통 규칙으로 갱신 처리(잔여 100%).
-    Some(UsageWindow::from_used_percent(window.used_percent, resets_at).reset_if_elapsed(chrono::Utc::now()))
+    Some(
+        UsageWindow::from_used_percent(window.used_percent, resets_at)
+            .reset_if_elapsed(chrono::Utc::now()),
+    )
 }
 
 fn epoch_to_rfc3339(secs: i64) -> Option<String> {

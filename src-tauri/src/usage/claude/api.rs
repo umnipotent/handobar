@@ -108,7 +108,12 @@ pub(super) async fn fetch_usage(access_token: &str) -> Result<UsageWindows, Usag
 }
 
 fn parse_retry_after(resp: &reqwest::Response) -> Option<u64> {
-    parse_retry_after_value(resp.headers().get(reqwest::header::RETRY_AFTER)?.to_str().ok()?)
+    parse_retry_after_value(
+        resp.headers()
+            .get(reqwest::header::RETRY_AFTER)?
+            .to_str()
+            .ok()?,
+    )
 }
 
 fn parse_retry_after_value(value: &str) -> Option<u64> {
