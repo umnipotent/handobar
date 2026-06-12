@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { CLAUDE_USAGE_PROVIDER } from "./features/claudeUsage/provider";
 import { CODEX_USAGE_PROVIDER } from "./features/codexUsage/provider";
 import { UsagePanel, type UsageProvider } from "./features/usage/UsagePanel";
 import { StatusBar } from "./features/usage/StatusBar";
-import { loadPanelOrder, savePanelOrder } from "./features/usage/storage";
+import { loadBool, loadPanelOrder, saveBool, savePanelOrder, showInTrayKey } from "./features/usage/storage";
+import { updateTrayDisplay } from "./features/usage/trayDisplay";
 import type { ProviderCriticalStatus } from "./features/usage/types";
 import "./App.css";
 
@@ -33,6 +34,10 @@ function App() {
   const [dropTargetPanelId, setDropTargetPanelId] = useState<string | null>(null);
   const panelDragRef = useRef<PanelDragState | null>(null);
   const [criticalStatuses, setCriticalStatuses] = useState<Record<string, ProviderCriticalStatus>>({});
+  const [showInTray, setShowInTray] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(USAGE_PROVIDERS.map((p) => [p.id, loadBool(showInTrayKey(p.id))])),
+  );
+  const [fiveHourRemainings, setFiveHourRemainings] = useState<Record<string, number | null>>({});
   const orderedProviders = useMemo(() => sortProvidersByOrder(USAGE_PROVIDERS, panelOrder), [panelOrder]);
 
   const handleCriticalChange = useCallback(
@@ -50,6 +55,17 @@ function App() {
     [],
   );
 
+  const handleToggleShowInTray = useCallback((providerId: string, next: boolean) => {
+    saveBool(showInTrayKey(providerId), next);
+    setShowInTray((current) => ({ ...current, [providerId]: next }));
+  }, []);
+
+  const handleFiveHourRemainingChange = useCallback((providerId: string, remaining: number | null) => {
+    setFiveHourRemainings((current) =>
+      current[providerId] === remaining ? current : { ...current, [providerId]: remaining },
+    );
+  }, []);
+
   // 패널 순서대로 정렬된 임계 상태 목록 (상태 표시줄용).
   const orderedCriticalStatuses = useMemo(
     () =>
@@ -58,6 +74,16 @@ function App() {
         .filter((status): status is ProviderCriticalStatus => status != null),
     [orderedProviders, criticalStatuses],
   );
+
+  useEffect(() => {
+    const items = orderedProviders
+      .filter((provider) => showInTray[provider.id])
+      .map((provider) => ({
+        glyph: provider.glyph,
+        remaining: fiveHourRemainings[provider.id] ?? null,
+      }));
+    void updateTrayDisplay(items);
+  }, [orderedProviders, showInTray, fiveHourRemainings]);
 
   function movePanel(draggedId: string, targetId: string) {
     if (draggedId === targetId) return;
@@ -134,7 +160,7 @@ function App() {
     <>
       <StatusBar statuses={orderedCriticalStatuses} />
       <main className="container">
-      {orderedProviders.map((provider) => (
+        {orderedProviders.map((provider) => (
         <div
           key={provider.id}
           className={[
@@ -150,9 +176,15 @@ function App() {
           onPointerUp={resetPanelDrag}
           onPointerCancel={resetPanelDrag}
         >
-          <UsagePanel {...provider} onCriticalChange={handleCriticalChange} />
+          <UsagePanel
+            {...provider}
+            onCriticalChange={handleCriticalChange}
+            showInTray={showInTray[provider.id] ?? false}
+            onToggleShowInTray={handleToggleShowInTray}
+            onFiveHourRemainingChange={handleFiveHourRemainingChange}
+          />
         </div>
-      ))}
+        ))}
       </main>
     </>
   );
