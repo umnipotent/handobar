@@ -50,6 +50,12 @@ export const USAGE_COPY = {
       title: "주간",
       hint: "7일 한도",
     },
+    antigravity: {
+      geminiTitle: "Gemini 계열",
+      geminiHint: "Gemini 3.5/3.1 등 Google 모델 잔여 한도",
+      nonGeminiTitle: "타사/오픈소스 모델",
+      nonGeminiHint: "GPT, Sonnet, Opus 등 타사/오픈소스 모델 잔여 한도",
+    },
   },
   usage: {
     emptyValue: "—",

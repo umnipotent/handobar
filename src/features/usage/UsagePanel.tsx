@@ -23,6 +23,10 @@ export interface UsageProvider {
   storageKey: string;
   webUrl?: string;
   showSevenDayCard?: boolean;
+  fiveHourTitle?: string | ((usage: any) => string);
+  fiveHourHint?: string | ((usage: any) => string);
+  sevenDayTitle?: string | ((usage: any) => string);
+  sevenDayHint?: string | ((usage: any) => string);
   // usage는 있는데 윈도우가 null일 때의 해석 (기본: 판단 불가 → 빈 카드)
   nullWindowMeaning?: NullWindowMeaning;
 }
@@ -86,6 +90,10 @@ export function UsagePanel({
   storageKey,
   webUrl,
   showSevenDayCard = true,
+  fiveHourTitle,
+  fiveHourHint,
+  sevenDayTitle,
+  sevenDayHint,
   nullWindowMeaning = "unknown",
   onCriticalChange,
   showInTray = false,
@@ -112,6 +120,16 @@ export function UsagePanel({
     dismissSubModelWarning,
     dismissError,
   } = useUsage(gateway, storageKey);
+
+  const resolveTitle = (custom: any, fallback: string) => {
+    if (typeof custom === "function") return custom(usage);
+    return custom ?? fallback;
+  };
+
+  const resolveHint = (custom: any, fallback: string) => {
+    if (typeof custom === "function") return custom(usage);
+    return custom ?? fallback;
+  };
 
   const [sevenDayCollapsed, setSevenDayCollapsed] = useState(() =>
     loadCollapsed(`${storageKey}.sevenDay.collapsed`)
@@ -264,8 +282,8 @@ export function UsagePanel({
       )}
 
       <WindowCard
-        title={USAGE_COPY.windows.fiveHour.title}
-        hint={USAGE_COPY.windows.fiveHour.hint}
+        title={resolveTitle(fiveHourTitle, USAGE_COPY.windows.fiveHour.title)}
+        hint={resolveHint(fiveHourHint, USAGE_COPY.windows.fiveHour.hint)}
         data={fiveHourData}
         skeleton={showingManualRefreshSkeleton}
       />
@@ -323,8 +341,8 @@ export function UsagePanel({
         <>
           {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
           <WindowCard
-            title={USAGE_COPY.windows.sevenDay.title}
-            hint={USAGE_COPY.windows.sevenDay.hint}
+            title={resolveTitle(sevenDayTitle, USAGE_COPY.windows.sevenDay.title)}
+            hint={resolveHint(sevenDayHint, USAGE_COPY.windows.sevenDay.hint)}
             data={sevenDayData}
             skeleton={showingManualRefreshSkeleton}
             collapsible
