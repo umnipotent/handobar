@@ -80,6 +80,10 @@ Claude(Claude Code)로 이 프로젝트를 작업할 때, **실제 코드 구현
   codex MCP 호출(구현 지시), 결과 검토·검증.
 - Codex(GPT-5.5 medium fast)의 역할: 실제 코드 작성·수정 등 구현 작업 수행
   (`workspace-write`/fullAuto 샌드박스로 호출).
+- **worktree 변경 금지 지침**: codex 호출 프롬프트에는 "지시한 파일 외의 기존 worktree 변경
+  (미커밋 수정분)을 절대 건드리지 말 것 — 되돌리기·`git checkout`·`git restore`·`git stash` 금지"를
+  **상시 포함**한다. codex가 범위 밖 변경을 발견하면 그대로 두고 보고만 하게 한다.
+  (배경: codex가 미커밋 변경을 "범위 밖 실수"로 오인해 임의 revert, 작업분이 유실된 사례가 있음.)
 
 ### Codex 사용량 기반 모델 선택
 
