@@ -1,5 +1,6 @@
 import { createTauriUsageGateway } from "../usage/gateway";
 import type { UsageProvider } from "../usage/UsagePanel";
+import { USAGE_COPY } from "../usage/copy";
 
 // Antigravity provider: 백엔드 get_antigravity_usage 커맨드(로컬 cockpit quota 캐시).
 export const ANTIGRAVITY_USAGE_PROVIDER: UsageProvider = {
@@ -12,6 +13,22 @@ export const ANTIGRAVITY_USAGE_PROVIDER: UsageProvider = {
   gateway: createTauriUsageGateway("get_antigravity_usage"),
   storageKey: "handobar.antigravity.intervalMin",
   webUrl: "https://antigravity.google/",
-  showSevenDayCard: false,
+  showSevenDayCard: true,
+  fiveHourTitle: (usage) => {
+    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    return isGemini ? USAGE_COPY.windows.antigravity.geminiTitle : USAGE_COPY.windows.antigravity.nonGeminiTitle;
+  },
+  fiveHourHint: (usage) => {
+    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    return isGemini ? USAGE_COPY.windows.antigravity.geminiHint : USAGE_COPY.windows.antigravity.nonGeminiHint;
+  },
+  sevenDayTitle: (usage) => {
+    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiTitle : USAGE_COPY.windows.antigravity.geminiTitle;
+  },
+  sevenDayHint: (usage) => {
+    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiHint : USAGE_COPY.windows.antigravity.geminiHint;
+  },
   nullWindowMeaning: "unknown",
 };
