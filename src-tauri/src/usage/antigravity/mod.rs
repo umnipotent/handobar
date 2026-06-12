@@ -25,7 +25,10 @@ pub(super) async fn get_antigravity_usage(force: bool) -> Result<UsageSnapshot, 
     };
 
     let project = eligibility.cloudaicompanion_project.as_deref();
-    let tier_name = eligibility.current_tier.and_then(|tier| tier.name);
+    let tier_name = eligibility
+        .paid_tier
+        .and_then(|tier| tier.name)
+        .or(eligibility.current_tier.and_then(|tier| tier.name));
     let (models, default_agent_model_id, model_priority) =
         match api::fetch_available_models(&access_token, project).await {
             Ok(response) => {

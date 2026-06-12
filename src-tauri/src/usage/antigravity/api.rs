@@ -15,6 +15,7 @@ const VERSION: &str = "1.0.0";
 pub(super) struct LoadCodeAssistResponse {
     pub cloudaicompanion_project: Option<String>,
     pub current_tier: Option<Tier>,
+    pub paid_tier: Option<Tier>,
 }
 
 #[derive(Deserialize, Debug)]
