@@ -22,6 +22,7 @@ export interface UsageProvider {
   gateway: UsageGateway;
   storageKey: string;
   webUrl?: string;
+  showSevenDayCard?: boolean;
   // usage는 있는데 윈도우가 null일 때의 해석 (기본: 판단 불가 → 빈 카드)
   nullWindowMeaning?: NullWindowMeaning;
 }
@@ -84,6 +85,7 @@ export function UsagePanel({
   gateway,
   storageKey,
   webUrl,
+  showSevenDayCard = true,
   nullWindowMeaning = "unknown",
   onCriticalChange,
   showInTray = false,
@@ -134,7 +136,7 @@ export function UsagePanel({
   // exhausted 메시지 닫기 상태. 사용량이 0%→양수로 회복되면 자동 리셋.
   const hasUsage = usage != null;
   const fiveHourData = resolveWindow(usage?.five_hour, hasUsage, nullWindowMeaning);
-  const sevenDayData = resolveWindow(usage?.seven_day, hasUsage, nullWindowMeaning);
+  const sevenDayData = showSevenDayCard ? resolveWindow(usage?.seven_day, hasUsage, nullWindowMeaning) : null;
   const fiveHourRemaining = fiveHourData?.remaining ?? null;
   const sevenDayRemaining = sevenDayData?.remaining ?? null;
   const [fiveHourExhaustedDismissed, setFiveHourExhaustedDismissed] = useState(false);
@@ -224,6 +226,11 @@ export function UsagePanel({
             {usage?.subscription && (
               <span className="badge">{usage.subscription}</span>
             )}
+            {usage?.model_tags?.map((tag) => (
+              <span key={tag} className="badge">
+                {tag}
+              </span>
+            ))}
           </div>
         )}
         <div className="header-actions-row">
@@ -273,7 +280,7 @@ export function UsagePanel({
         />
       )}
 
-      {/* 알림 배너: 일간과 주간 사이에 배치 */}
+      {/* 알림 배너: 카드와 카드 사이 상단 영역에 배치 */}
       {error && (
         <AlertBanner
           message={error}
@@ -312,28 +319,32 @@ export function UsagePanel({
         />
       )}
 
-      {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
-      <WindowCard
-        title={USAGE_COPY.windows.sevenDay.title}
-        hint={USAGE_COPY.windows.sevenDay.hint}
-        data={sevenDayData}
-        skeleton={showingManualRefreshSkeleton}
-        collapsible
-        collapsed={sevenDayCollapsed}
-        onToggleCollapse={() => toggleSevenDay(!sevenDayCollapsed)}
-      />
+      {showSevenDayCard && (
+        <>
+          {/* 주간 카드: 헤더 클릭으로 접기/펼치기, 상태 localStorage 유지 */}
+          <WindowCard
+            title={USAGE_COPY.windows.sevenDay.title}
+            hint={USAGE_COPY.windows.sevenDay.hint}
+            data={sevenDayData}
+            skeleton={showingManualRefreshSkeleton}
+            collapsible
+            collapsed={sevenDayCollapsed}
+            onToggleCollapse={() => toggleSevenDay(!sevenDayCollapsed)}
+          />
 
-      {/* 주간 고갈 배너 */}
-      {sevenDayData?.remaining === 0 && !sevenDayExhaustedDismissed && (
-        <AlertBanner
-          message={USAGE_COPY.usage.exhausted.message}
-          type="danger"
-          onDismiss={() => setSevenDayExhaustedDismissed(true)}
-          dismissLabel={USAGE_COPY.dismiss.exhausted}
-        />
+          {/* 주간 고갈 배너 */}
+          {sevenDayData?.remaining === 0 && !sevenDayExhaustedDismissed && (
+            <AlertBanner
+              message={USAGE_COPY.usage.exhausted.message}
+              type="danger"
+              onDismiss={() => setSevenDayExhaustedDismissed(true)}
+              dismissLabel={USAGE_COPY.dismiss.exhausted}
+            />
+          )}
+        </>
       )}
 
-      {/* 메모 탭: 주간 아래, 가로 풀 박스 메모지 (접기/펼치기 유지) */}
+      {/* 메모 탭: 하단 풀 폭 메모지 (접기/펼치기 유지) */}
       <MemoCard
         value={memo}
         onSave={handleMemoSave}
