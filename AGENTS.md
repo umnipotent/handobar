@@ -69,6 +69,23 @@ handobar/
   ln -s ../.agents/skills .claude/skills
   ```
 
+## 에이전트 작업 방식 (Claude × Codex MCP)
+
+Claude(Claude Code)로 이 프로젝트를 작업할 때, **실제 코드 구현(파일 작성·수정 등)은 Claude가 직접
+수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를 통해 **GPT-5.5 medium fast** 모델에
+구현을 위임한다.
+
+- Claude의 역할: 요구사항 분석, 작업 계획 수립, codex MCP 호출(구현 지시), 결과 검토·검증.
+- Codex(GPT-5.5 medium fast)의 역할: 실제 코드 작성·수정 등 구현 작업 수행.
+
+### Git 작업 정책
+
+- **커밋·태그·브랜치 생성 등 Git 형상 관리 작업은 유저가 직접 antigravity CLI에 요청해 진행한다.**
+- **Claude·Codex는 해당 명령을 실행하지 않을 뿐 아니라, 커밋 메시지·태그명·브랜치명 제안조차 하지
+  않는다.** 관련 요청을 받으면 작업하지 말고 antigravity CLI에 직접 요청하도록 안내한다.
+- 커밋 메시지 컨벤션([`hb-commit` 스킬](.agents/skills/commit-message/SKILL.md))은 antigravity가
+  커밋을 수행할 때 따르는 참고 기준이다.
+
 ## 개발 환경 및 실행
 
 ```sh
@@ -153,7 +170,8 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 ```
 
 > 카테고리 선택 기준·예시·작성 절차의 **단일 출처는 [`hb-commit` 스킬](.agents/skills/commit-message/SKILL.md)** 이다.
-> 커밋 메시지를 작성할 때는 이 스킬을 따른다.
+> 커밋은 유저가 직접 antigravity CLI에 요청하며, Claude·Codex는 실행은 물론 **메시지 제안조차 하지
+> 않는다**([Git 작업 정책](#git-작업-정책) 참고).
 
 ## 버전 관리
 
@@ -180,8 +198,10 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 1. 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)의 버전을 동일하게 맞춘다.
    → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
-2. [`hb-commit` 스킬](#스킬skills)을 따라 `chore: x.y.z 버전업` 으로 커밋한다.
-3. 해당 커밋에 동일 버전의 Git 태그를 단다: `git tag -a x.y.z -m "x.y.z"`.
+2. `chore: x.y.z 버전업` 커밋은 **유저가 직접 antigravity CLI에 요청**한다
+   (메시지 컨벤션은 [`hb-commit` 스킬](#스킬skills), [Git 작업 정책](#git-작업-정책) 참고).
+3. 해당 커밋에 동일 버전의 Git 태그(`git tag -a x.y.z -m "x.y.z"`)를 다는 것도
+   유저가 직접 antigravity CLI에 요청한다.
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
 > 현재 버전: **`0.1.3`** (스킬 인프라 정비: hb-commit·hb-version, 심볼릭 링크 문서화).
@@ -224,9 +244,9 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 | [`hb-tauri`](.agents/skills/tauri/SKILL.md) | [개발 환경 및 실행](#개발-환경-및-실행) | Tauri 백엔드: 실행/빌드, invoke 통신, 커맨드 추가, 권한(ACL) | Tauri/Rust 백엔드를 만질 때 |
 | [`hb-usage`](.agents/skills/usage/SKILL.md) | [사용량 추적](#사용량-추적) | provider별 잔여 사용량 fetch(소스·인증·폴링/rate limit·provider 추가) | 사용량 추적 기능을 만지거나 provider를 추가할 때 |
 | [`hb-testing`](.agents/skills/testing/SKILL.md) | [유닛 테스트](#유닛-테스트) | Rust/Vitest 테스트 작성·실행, 캐시 상태 격리, fake timer/localStorage mock | 테스트를 추가·수정하거나 flaky/racy 테스트를 다룰 때 |
-| [`hb-commit`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 작성 | 커밋 메시지를 쓸 때마다 |
-| [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 다섯 파일 버전 동기화 + 커밋·태그 (스크립트 번들) | 버전업/릴리스/태그할 때 |
+| [`hb-commit`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 컨벤션 (antigravity 수행 기준) | 커밋 관련 요청 시 정책·컨벤션 확인용 (Claude·Codex는 메시지 제안 금지) |
+| [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 다섯 파일 버전 동기화 (스크립트 번들; 커밋·태그는 유저가 antigravity CLI에 요청) | 버전업/릴리스/태그할 때 |
 
 **연관**: `hb-usage` 는 `hb-tauri` 의 커맨드·invoke·ACL·코드 서명 패턴 위에 올라간다.
 `hb-testing` 은 `hb-usage` 의 캐시·provider 테스트 정책을 구체화한다.
-`hb-version` 의 커밋 단계는 `hb-commit` 스킬을 호출해 메시지를 작성한다.
+`hb-version` 의 커밋·태그 단계는 유저가 antigravity CLI에 직접 요청하며, 그 메시지 컨벤션은 `hb-commit` 을 따른다.

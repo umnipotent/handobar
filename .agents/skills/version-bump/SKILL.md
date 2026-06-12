@@ -1,12 +1,14 @@
 ---
 name: hb-version
-description: Bump the handobar app version across all source-of-truth files (package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, Cargo.lock, AGENTS.md), then commit and tag the release. Use this skill whenever the user wants to release a new version, bump/raise the version number, cut a release, tag a version, or mentions a version number like "0.0.2"/"v1.0" in the context of shipping handobar — even if they don't explicitly say "use the version skill". Keeping the five files in sync by hand is error-prone, so always route version changes through here.
+description: Bump the handobar app version across all source-of-truth files (package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml, Cargo.lock, AGENTS.md). The release commit and tag are requested by the user directly via the antigravity CLI — Claude/Codex must not run them or propose messages. Use this skill whenever the user wants to release a new version, bump/raise the version number, cut a release, tag a version, or mentions a version number like "0.0.2"/"v1.0" in the context of shipping handobar — even if they don't explicitly say "use the version skill". Keeping the five files in sync by hand is error-prone, so always route version changes through here.
 ---
 
 # Version Bump (handobar 릴리스)
 
 handobar의 버전 번호는 **다섯 곳**에 흩어져 있어 손으로 고치면 한 곳을 빠뜨리기 쉽다.
-이 스킬은 다섯 파일을 한 번에 일치시키고, 커밋·태그까지 프로젝트의 [버전 관리 규칙](../../../AGENTS.md)에 맞춰 처리한다.
+이 스킬은 다섯 파일을 한 번에 일치시킨다. 이어지는 커밋·태그는 프로젝트의
+[버전 관리 규칙](../../../AGENTS.md)에 따라 **유저가 직접 antigravity CLI에 요청**해 진행하며,
+Claude·Codex는 실행은 물론 메시지 제안도 하지 않는다(아래 3·4 참고).
 
 버전 단일 출처(Single Source of Truth):
 
@@ -36,9 +38,11 @@ python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
 스크립트는 각 파일에서 정확히 한 곳만 치환하며, 대상을 못 찾으면 즉시 실패한다(부분 적용 방지).
 실행 후 `git diff` 로 다섯 파일이 모두 같은 버전으로 바뀌었는지 확인한다.
 
-### 3. 커밋
+### 3. 커밋 (유저 → antigravity CLI)
 
-[`hb-commit` 스킬](../commit-message/SKILL.md)을 따라 작성한다.
+커밋은 **유저가 직접 antigravity CLI에 요청**한다. Claude·Codex는 실행은 물론 메시지 제안도 하지
+않는다. antigravity가 따르는 메시지 컨벤션은 [`hb-commit` 스킬](../commit-message/SKILL.md)이며,
+형식은 다음과 같다.
 
 ```
 chore: x.y.z 버전업
@@ -46,9 +50,10 @@ chore: x.y.z 버전업
 
 본문이 필요하면 주요 변경 요약을 한국어로 덧붙인다.
 
-### 4. 태그
+### 4. 태그 (유저 → antigravity CLI)
 
-커밋에 **`v` 접두사 없는 순수 버전 번호** 태그를 단다.
+태그 역시 유저가 직접 antigravity CLI에 요청한다. 커밋에 **`v` 접두사 없는 순수 버전 번호**
+태그를 단다.
 
 ```bash
 git tag -a x.y.z -m "x.y.z"
