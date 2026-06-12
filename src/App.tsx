@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { ANTIGRAVITY_USAGE_PROVIDER } from "./features/antigravityUsage/provider";
 import { CLAUDE_USAGE_PROVIDER } from "./features/claudeUsage/provider";
 import { CODEX_USAGE_PROVIDER } from "./features/codexUsage/provider";
 import { UsagePanel, type UsageProvider } from "./features/usage/UsagePanel";
@@ -8,7 +9,7 @@ import { updateTrayDisplay } from "./features/usage/trayDisplay";
 import type { ProviderCriticalStatus } from "./features/usage/types";
 import "./App.css";
 
-const USAGE_PROVIDERS = [CLAUDE_USAGE_PROVIDER, CODEX_USAGE_PROVIDER] as const;
+const USAGE_PROVIDERS = [CLAUDE_USAGE_PROVIDER, CODEX_USAGE_PROVIDER, ANTIGRAVITY_USAGE_PROVIDER] as const;
 const DEFAULT_PANEL_ORDER = USAGE_PROVIDERS.map((provider) => provider.id);
 const DRAG_START_THRESHOLD_PX = 6;
 

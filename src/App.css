@@ -55,15 +55,17 @@ body {
   padding: 24px;
   box-sizing: border-box;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: flex-start;
   gap: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .panel-shell {
-  width: min(360px, 100%);
-  flex: 0 1 360px;
+  width: 360px;
+  flex: 0 0 360px;
   padding: 10px;
   border: 1px dashed #cfd0d7;
   border-radius: var(--radius-md);
