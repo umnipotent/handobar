@@ -7,7 +7,7 @@ mod credentials;
 mod messages;
 mod source;
 
-use crate::usage::cache::{self, ANTIGRAVITY_CACHE, FetchDecision};
+use crate::usage::cache::{self, FetchDecision, ANTIGRAVITY_CACHE};
 use crate::usage::model::UsageSnapshot;
 
 pub(super) async fn get_antigravity_usage(force: bool) -> Result<UsageSnapshot, String> {

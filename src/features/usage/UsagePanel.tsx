@@ -27,6 +27,9 @@ export interface UsageProvider {
   fiveHourHint?: string | ((usage: any) => string);
   sevenDayTitle?: string | ((usage: any) => string);
   sevenDayHint?: string | ((usage: any) => string);
+  fiveHourChips?: (usage: any) => string[] | undefined;
+  sevenDayChips?: (usage: any) => string[] | undefined;
+  showModelBadges?: boolean;
   // usage는 있는데 윈도우가 null일 때의 해석 (기본: 판단 불가 → 빈 카드)
   nullWindowMeaning?: NullWindowMeaning;
 }
@@ -94,6 +97,9 @@ export function UsagePanel({
   fiveHourHint,
   sevenDayTitle,
   sevenDayHint,
+  fiveHourChips,
+  sevenDayChips,
+  showModelBadges,
   nullWindowMeaning = "unknown",
   onCriticalChange,
   showInTray = false,
@@ -238,13 +244,13 @@ export function UsagePanel({
         </div>
         {(usage?.model || usage?.subscription) && (
           <div className="header-sub-row">
-            {usage?.model && (
+            {showModelBadges !== false && usage?.model && (
               <span className="badge model-badge">{usage.model}</span>
             )}
             {usage?.subscription && (
               <span className="badge">{usage.subscription}</span>
             )}
-            {usage?.model_tags?.map((tag) => (
+            {showModelBadges !== false && usage?.model_tags?.map((tag) => (
               <span key={tag} className="badge">
                 {tag}
               </span>
@@ -286,6 +292,7 @@ export function UsagePanel({
         hint={resolveHint(fiveHourHint, USAGE_COPY.windows.fiveHour.hint)}
         data={fiveHourData}
         skeleton={showingManualRefreshSkeleton}
+        chips={typeof fiveHourChips === "function" ? fiveHourChips(usage) : undefined}
       />
 
       {/* 5시간 고갈 배너 */}
@@ -348,6 +355,7 @@ export function UsagePanel({
             collapsible
             collapsed={sevenDayCollapsed}
             onToggleCollapse={() => toggleSevenDay(!sevenDayCollapsed)}
+            chips={typeof sevenDayChips === "function" ? sevenDayChips(usage) : undefined}
           />
 
           {/* 주간 고갈 배너 */}

@@ -13,6 +13,7 @@ interface WindowCardProps {
   collapsible?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  chips?: string[];
 }
 
 export function WindowCard({
@@ -23,6 +24,7 @@ export function WindowCard({
   collapsible = false,
   collapsed = false,
   onToggleCollapse,
+  chips,
 }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
   const isExhausted = remaining === 0;
@@ -118,6 +120,15 @@ export function WindowCard({
             </div>
           )}
         </>
+      )}
+      {!collapsed && chips && chips.length > 0 && (
+        <div className="card-chips">
+          {chips.map((chip) => (
+            <span key={chip} className="card-chip">
+              {chip}
+            </span>
+          ))}
+        </div>
       )}
     </section>
   );

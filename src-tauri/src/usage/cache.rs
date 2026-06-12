@@ -133,6 +133,8 @@ mod tests {
             subscription: Some("pro".to_string()),
             model: None,
             model_tags: None,
+            five_hour_chips: None,
+            seven_day_chips: None,
             fetched_at: "2026-06-10T14:00:00Z".to_string(),
             retry_after_secs: None,
             is_stale: false,

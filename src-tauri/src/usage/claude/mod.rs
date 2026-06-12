@@ -67,6 +67,8 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
         subscription: creds.subscription_type,
         model: read_claude_model(),
         model_tags: None,
+        five_hour_chips: None,
+        seven_day_chips: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,

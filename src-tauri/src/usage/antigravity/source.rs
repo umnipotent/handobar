@@ -18,6 +18,19 @@ pub(super) fn convert(
 ) -> Result<UsageSnapshot, String> {
     let now = Utc::now();
     let priority_ranks = priority_ranks(default_agent_model_id, model_priority);
+    let five_hour_chips = model_chips(
+        models
+            .iter()
+            .filter(|(_, model)| model.api_provider.as_deref() == Some(API_PROVIDER_GEMINI)),
+        &priority_ranks,
+    );
+    let seven_day_chips = model_chips(
+        models.iter().filter(|(_, model)| {
+            model.api_provider.as_deref() != Some(API_PROVIDER_GEMINI)
+                && model.api_provider.as_deref() != Some(API_PROVIDER_INTERNAL)
+        }),
+        &priority_ranks,
+    );
     let gemini = pick_representative(
         models
             .iter()
@@ -52,6 +65,8 @@ pub(super) fn convert(
         subscription: tier_name.or_else(|| Some("Authorized".to_string())),
         model: model_name,
         model_tags: third_party_name.map(|name| vec![name]),
+        five_hour_chips,
+        seven_day_chips,
         fetched_at: now.to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,
@@ -97,6 +112,39 @@ where
                 model_key.as_str(),
             )
         })
+}
+
+fn model_chips<'a, I>(models: I, priority_ranks: &HashMap<String, usize>) -> Option<Vec<String>>
+where
+    I: Iterator<Item = (&'a String, &'a ApiModel)>,
+{
+    let mut candidates: Vec<(&String, &ApiModel)> = models
+        .filter(|(_, model)| {
+            model.recommended == Some(true) && model.display_name.as_deref().is_some()
+        })
+        .collect();
+
+    candidates.sort_by_key(|(model_key, _)| {
+        (
+            priority_ranks
+                .get(model_key.as_str())
+                .copied()
+                .unwrap_or(usize::MAX),
+            model_key.as_str(),
+        )
+    });
+
+    let mut chips = Vec::new();
+    for (_, model) in candidates {
+        let Some(display_name) = model.display_name.as_ref() else {
+            continue;
+        };
+        if !chips.contains(display_name) {
+            chips.push(display_name.clone());
+        }
+    }
+
+    (!chips.is_empty()).then_some(chips)
 }
 
 fn has_quota_info(model: &ApiModel) -> bool {
@@ -215,6 +263,11 @@ mod tests {
 
         assert_eq!(snapshot.model.as_deref(), Some("Gemini B"));
         assert_eq!(snapshot.model_tags, Some(vec!["Third A".to_string()]));
+        assert_eq!(
+            snapshot.five_hour_chips,
+            Some(vec!["Gemini A".to_string(), "Gemini B".to_string()])
+        );
+        assert!(snapshot.seven_day_chips.is_none());
         assert_eq!(snapshot.subscription.as_deref(), Some("Pro"));
     }
 
@@ -297,6 +350,108 @@ mod tests {
             Some(vec!["Claude Sonnet 4.6 (Thinking)".to_string()])
         );
         assert_eq!(snapshot.seven_day.unwrap().remaining, 66.0);
+    }
+
+    #[test]
+    fn recommended_chips_are_grouped_prioritized_and_deduplicated() {
+        let mut models = BTreeMap::new();
+        models.insert(
+            "gemini-z".to_string(),
+            model(
+                Some("Gemini Shared"),
+                API_PROVIDER_GEMINI,
+                Some(true),
+                Some(0.9),
+                Some("2999-06-13T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "gemini-a".to_string(),
+            model(
+                Some("Gemini Shared"),
+                API_PROVIDER_GEMINI,
+                Some(true),
+                Some(0.8),
+                Some("2999-06-13T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "gemini-b".to_string(),
+            model(
+                Some("Gemini B"),
+                API_PROVIDER_GEMINI,
+                Some(true),
+                Some(0.7),
+                Some("2999-06-13T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "gemini-not-recommended".to_string(),
+            model(
+                Some("Gemini Hidden"),
+                API_PROVIDER_GEMINI,
+                Some(false),
+                Some(0.6),
+                Some("2999-06-13T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "third-oss".to_string(),
+            model(
+                Some("OSS Model"),
+                "API_PROVIDER_OPENAI_COMPATIBLE",
+                Some(true),
+                Some(0.4),
+                Some("2999-06-14T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "third-claude".to_string(),
+            model(
+                Some("Claude Model"),
+                "API_PROVIDER_ANTHROPIC",
+                Some(true),
+                Some(0.5),
+                Some("2999-06-14T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "third-internal".to_string(),
+            model(
+                Some("Internal Model"),
+                API_PROVIDER_INTERNAL,
+                Some(true),
+                Some(0.5),
+                Some("2999-06-14T00:00:00Z"),
+            ),
+        );
+        models.insert(
+            "third-no-display".to_string(),
+            model(
+                None,
+                "API_PROVIDER_ANTHROPIC",
+                Some(true),
+                Some(0.5),
+                Some("2999-06-14T00:00:00Z"),
+            ),
+        );
+
+        let priority = vec![
+            "gemini-b".to_string(),
+            "gemini-z".to_string(),
+            "third-claude".to_string(),
+            "third-oss".to_string(),
+        ];
+        let snapshot = convert(&models, None, &priority, None).unwrap();
+
+        assert_eq!(
+            snapshot.five_hour_chips,
+            Some(vec!["Gemini B".to_string(), "Gemini Shared".to_string()])
+        );
+        assert_eq!(
+            snapshot.seven_day_chips,
+            Some(vec!["Claude Model".to_string(), "OSS Model".to_string()])
+        );
     }
 
     #[test]

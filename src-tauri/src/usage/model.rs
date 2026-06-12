@@ -51,6 +51,10 @@ pub struct UsageSnapshot {
     pub model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_tags: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub five_hour_chips: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seven_day_chips: Option<Vec<String>>,
     /// fetch 시각(RFC3339).
     pub fetched_at: String,
     /// rate limit 중이면 남은 대기 초(있을 때만 직렬화). Codex는 항상 `None`.

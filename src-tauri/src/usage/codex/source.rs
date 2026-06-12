@@ -200,6 +200,8 @@ fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
         subscription,
         model,
         model_tags: None,
+        five_hour_chips: None,
+        seven_day_chips: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,

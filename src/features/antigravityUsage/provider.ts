@@ -14,6 +14,9 @@ export const ANTIGRAVITY_USAGE_PROVIDER: UsageProvider = {
   storageKey: "handobar.antigravity.intervalMin",
   webUrl: "https://antigravity.google/",
   showSevenDayCard: true,
+  showModelBadges: false,
+  fiveHourChips: (usage) => usage?.five_hour_chips,
+  sevenDayChips: (usage) => usage?.seven_day_chips,
   fiveHourTitle: (usage) => {
     const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
     return isGemini ? USAGE_COPY.windows.antigravity.geminiTitle : USAGE_COPY.windows.antigravity.nonGeminiTitle;
