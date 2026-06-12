@@ -2,7 +2,7 @@
 //!
 //! 짧은 간격의 중복 호출(마운트·트레이·타이머 동시)을 합치고, 네트워크 provider의
 //! 429 backoff(`retry_until`) 동안 마지막 값을 stale로 돌려준다. 캐시 상태는
-//! provider마다 독립된 `static` 으로 분리되며(`CLAUDE_CACHE`, `CODEX_CACHE`), 로직은 공유한다.
+//! provider마다 독립된 `static` 으로 분리되며(`CLAUDE_CACHE`, `CODEX_CACHE`, `ANTIGRAVITY_CACHE`), 로직은 공유한다.
 //!
 //! Codex처럼 rate limit이 없는 provider는 `remember_retry` 를 호출하지 않을 뿐, 같은 코드를 쓴다(OCP).
 
@@ -38,6 +38,7 @@ impl Cache {
 
 pub(super) static CLAUDE_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
 pub(super) static CODEX_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
+pub(super) static ANTIGRAVITY_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
 
 /// fetch 전 캐시를 검사해 네트워크/파일 접근을 건너뛸 수 있는지 결정한다.
 pub(super) fn before_fetch(cache: &Mutex<Cache>) -> Result<FetchDecision, String> {
@@ -45,7 +46,8 @@ pub(super) fn before_fetch(cache: &Mutex<Cache>) -> Result<FetchDecision, String
 
     if let Some(until) = cache.retry_until {
         if let Some(remaining) = until.checked_duration_since(Instant::now()) {
-            return stale_or_error(&cache, remaining.as_secs().max(1)).map(FetchDecision::UseCached);
+            return stale_or_error(&cache, remaining.as_secs().max(1))
+                .map(FetchDecision::UseCached);
         }
     }
 
@@ -130,6 +132,7 @@ mod tests {
             seven_day: None,
             subscription: Some("pro".to_string()),
             model: None,
+            model_tags: None,
             fetched_at: "2026-06-10T14:00:00Z".to_string(),
             retry_after_secs: None,
             is_stale: false,

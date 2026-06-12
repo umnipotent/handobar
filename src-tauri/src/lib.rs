@@ -29,6 +29,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            usage::get_antigravity_usage,
             usage::get_claude_usage,
             usage::get_codex_usage,
             set_tray_display

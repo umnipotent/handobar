@@ -49,6 +49,8 @@ pub struct UsageSnapshot {
     pub seven_day: Option<UsageWindow>,
     pub subscription: Option<String>,
     pub model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_tags: Option<Vec<String>>,
     /// fetch 시각(RFC3339).
     pub fetched_at: String,
     /// rate limit 중이면 남은 대기 초(있을 때만 직렬화). Codex는 항상 `None`.
@@ -84,7 +86,9 @@ mod tests {
     }
 
     fn at(rfc3339: &str) -> DateTime<Utc> {
-        DateTime::parse_from_rfc3339(rfc3339).unwrap().with_timezone(&Utc)
+        DateTime::parse_from_rfc3339(rfc3339)
+            .unwrap()
+            .with_timezone(&Utc)
     }
 
     #[test]
@@ -106,9 +110,15 @@ mod tests {
     #[test]
     fn reset_if_elapsed_ignores_empty_or_unparsable() {
         let empty = UsageWindow::from_used_percent(90.0, String::new());
-        assert_eq!(empty.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")), empty);
+        assert_eq!(
+            empty.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")),
+            empty
+        );
 
         let garbage = UsageWindow::from_used_percent(90.0, "not-a-date".to_string());
-        assert_eq!(garbage.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")), garbage);
+        assert_eq!(
+            garbage.clone().reset_if_elapsed(at("2026-06-10T09:00:00Z")),
+            garbage
+        );
     }
 }
