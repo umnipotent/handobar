@@ -7,12 +7,31 @@ use tauri::{
     Emitter, Manager,
 };
 
+/// 프론트가 합성한 트레이 표시 이미지(PNG)를 적용한다. None이면 기본 템플릿 아이콘으로 복귀.
+#[tauri::command]
+fn set_tray_display(app: tauri::AppHandle, png: Option<Vec<u8>>) -> Result<(), String> {
+    let tray = app
+        .tray_by_id("main-tray")
+        .ok_or_else(|| "tray not found".to_string())?;
+
+    let image = match &png {
+        Some(bytes) => tauri::image::Image::from_bytes(bytes).map_err(|e| e.to_string())?,
+        None => tauri::image::Image::from_bytes(include_bytes!("../icons/tray-template.png"))
+            .map_err(|e| e.to_string())?,
+    };
+
+    tray.set_icon(Some(image)).map_err(|e| e.to_string())?;
+    tray.set_icon_as_template(true).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             usage::get_claude_usage,
-            usage::get_codex_usage
+            usage::get_codex_usage,
+            set_tray_display
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
