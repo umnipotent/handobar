@@ -1,167 +1,43 @@
-//! Antigravity 잔여 사용량 소스(로컬 cockpit quota 캐시).
-//!
-//! Antigravity는 `~/.antigravity_cockpit/cache/quota_api_v1*` 아래에 현재 모델의 `quotaInfo`
-//! 스냅샷을 저장한다. 최신 캐시 파일을 읽어 현재 대표 모델의 잔여 사용량으로 변환한다.
+//! Antigravity 잔여 사용량 API 응답 변환기.
 
-use std::fs;
-use std::path::{Path, PathBuf};
-
-use serde_json::Value;
-
-use crate::usage::antigravity::messages;
 use crate::usage::model::{UsageSnapshot, UsageWindow};
+use crate::usage::antigravity::api::ApiQuotaResponse;
 
-const MAX_FILES_SCANNED: usize = 40;
-
-pub(super) fn read_latest_snapshot() -> Result<UsageSnapshot, String> {
-    let cache_root = cache_root()?;
-    if !cache_root.is_dir() {
-        return Err(messages::QUOTA_CACHE_NOT_FOUND.to_string());
-    }
-
-    let mut files = Vec::new();
-    collect_quota_files(&cache_root, &mut files);
-    if files.is_empty() {
-        return Err(messages::QUOTA_CACHE_NOT_FOUND.to_string());
-    }
-
-    files.sort_by_key(|(_, mtime)| std::cmp::Reverse(*mtime));
-
+pub(super) fn convert_quota_response(live: &ApiQuotaResponse) -> Result<UsageSnapshot, String> {
     let now = chrono::Utc::now();
-    for (path, _) in files.into_iter().take(MAX_FILES_SCANNED) {
-        match read_snapshot_from_file(&path, now) {
-            Ok(Some(snapshot)) => return Ok(snapshot),
-            Ok(None) => continue,
-            Err(err) => {
-                eprintln!(
-                    "[handobar][antigravity] 캐시 읽기 실패: {} ({err})",
-                    path.display()
-                );
-            }
-        }
-    }
-
-    Err(messages::QUOTA_NOT_FOUND.to_string())
-}
-
-fn cache_root() -> Result<PathBuf, String> {
-    let home = std::env::var("HOME").map_err(|_| messages::HOME_NOT_FOUND.to_string())?;
-    Ok(PathBuf::from(home)
-        .join(".antigravity_cockpit")
-        .join("cache"))
-}
-
-fn collect_quota_files(dir: &Path, out: &mut Vec<(PathBuf, std::time::SystemTime)>) {
-    let Ok(entries) = fs::read_dir(dir) else {
-        return;
-    };
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            collect_quota_files(&path, out);
-            continue;
-        }
-
-        if !is_quota_snapshot_file(&path) {
-            continue;
-        }
-
-        if let Ok(mtime) = entry.metadata().and_then(|m| m.modified()) {
-            out.push((path, mtime));
-        }
-    }
-}
-
-fn is_quota_snapshot_file(path: &Path) -> bool {
-    path.extension().and_then(|s| s.to_str()) == Some("json")
-        && path
-            .components()
-            .any(|component| matches!(component.as_os_str().to_str(), Some(part) if part.starts_with("quota_api_v1")))
-}
-
-fn read_snapshot_from_file(
-    path: &Path,
-    now: chrono::DateTime<chrono::Utc>,
-) -> Result<Option<UsageSnapshot>, String> {
-    let content = fs::read_to_string(path).map_err(messages::read_failed)?;
-    let value: Value = serde_json::from_str(&content).map_err(messages::read_failed)?;
-    Ok(extract_snapshot(&value, now))
-}
-
-fn extract_snapshot(value: &Value, now: chrono::DateTime<chrono::Utc>) -> Option<UsageSnapshot> {
-    let payload = value.get("payload")?;
-    let default_model_id = payload.get("defaultAgentModelId")?.as_str()?;
-    let models = payload.get("models")?.as_object()?;
-    let model = models.get(default_model_id)?;
-    let quota_info = model.get("quotaInfo")?.as_object()?;
-    let remaining_fraction = quota_info.get("remainingFraction")?.as_f64()?;
-    let resets_at = quota_info
-        .get("resetTime")
-        .and_then(|value| value.as_str())
-        .unwrap_or_default()
-        .to_string();
-
-    let model_name = model
-        .get("displayName")
-        .and_then(|value| value.as_str())
-        .unwrap_or(default_model_id)
-        .to_string();
-
-    let remaining = (remaining_fraction * 100.0).clamp(0.0, 100.0);
-    let used = (100.0 - remaining).clamp(0.0, 100.0);
-    let window = UsageWindow::from_used_percent(used, resets_at).reset_if_elapsed(now);
-
-    let is_default_gemini = is_gemini_model(
-        default_model_id,
-        model.get("displayName").and_then(|v| v.as_str()),
-    );
-    let mut other_window = None;
-
-    for (model_id, m_value) in models {
-        if let Some(other_quota_info) = m_value.get("quotaInfo").and_then(|v| v.as_object()) {
-            let other_display = m_value.get("displayName").and_then(|v| v.as_str());
-            let is_other_gemini = is_gemini_model(model_id, other_display);
-            if is_default_gemini != is_other_gemini {
-                if let Some(other_rem_frac) = other_quota_info
-                    .get("remainingFraction")
-                    .and_then(|v| v.as_f64())
-                {
-                    let other_resets_at = other_quota_info
-                        .get("resetTime")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or_default()
-                        .to_string();
-                    let other_rem = (other_rem_frac * 100.0).clamp(0.0, 100.0);
-                    let other_used = (100.0 - other_rem).clamp(0.0, 100.0);
-                    let w = UsageWindow::from_used_percent(other_used, other_resets_at)
-                        .reset_if_elapsed(now);
-                    other_window = Some(w);
-                    break;
+    
+    let mut flash_window = None;
+    let mut pro_window = None;
+    let mut model_name = String::from("Gemini");
+    
+    if let Some(buckets) = &live.buckets {
+        for bucket in buckets {
+            let remaining = (bucket.remaining_fraction * 100.0).clamp(0.0, 100.0);
+            let used = (100.0 - remaining).clamp(0.0, 100.0);
+            let resets_at = bucket.reset_time.clone().unwrap_or_default();
+            
+            let window = UsageWindow::from_used_percent(used, resets_at).reset_if_elapsed(now);
+            
+            if bucket.model_id.contains("flash") {
+                flash_window = Some(window);
+                model_name = bucket.model_id.clone();
+            } else if bucket.model_id.contains("pro") {
+                pro_window = Some(window);
+                if flash_window.is_none() {
+                    model_name = bucket.model_id.clone();
                 }
             }
         }
     }
-
-    let subscription = value
-        .get("source")
-        .and_then(|v| v.as_str())
-        .map(|s| {
-            if s.is_empty() {
-                s.to_string()
-            } else {
-                let mut chars = s.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            }
-        });
-
-    Some(UsageSnapshot {
-        five_hour: Some(window),
-        seven_day: other_window,
-        subscription,
+    
+    if flash_window.is_none() && pro_window.is_none() {
+        return Err("No valid Gemini model quotas found in API response".to_string());
+    }
+    
+    Ok(UsageSnapshot {
+        five_hour: flash_window,
+        seven_day: pro_window,
+        subscription: Some("Authorized".to_string()),
         model: Some(model_name),
         model_tags: None,
         fetched_at: now.to_rfc3339(),
@@ -170,110 +46,42 @@ fn extract_snapshot(value: &Value, now: chrono::DateTime<chrono::Utc>) -> Option
     })
 }
 
-
-fn is_gemini_model(model_id: &str, display_name: Option<&str>) -> bool {
-    model_id.starts_with("gemini-")
-        || display_name
-            .map(|name| name.trim_start().starts_with("Gemini"))
-            .unwrap_or(false)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn at(rfc3339: &str) -> chrono::DateTime<chrono::Utc> {
-        chrono::DateTime::parse_from_rfc3339(rfc3339)
-            .unwrap()
-            .with_timezone(&chrono::Utc)
-    }
+    use crate::usage::antigravity::api::ApiQuotaBucket;
 
     #[test]
-    fn extracts_default_model_quota_from_api_v1_snapshot() {
-        let json = r#"{
-            "version": 1,
-            "source": "authorized",
-            "payload": {
-                "defaultAgentModelId": "gemini-3.5-flash-low",
-                "models": {
-                    "gemini-3.5-flash-low": {
-                        "displayName": "Gemini 3.5 Flash (Medium)",
-                        "quotaInfo": {
-                            "remainingFraction": 0.8,
-                            "resetTime": "2026-06-05T06:27:09Z"
-                        }
-                    }
-                }
-            }
-        }"#;
-        let value: Value = serde_json::from_str(json).unwrap();
-        let snapshot = extract_snapshot(&value, at("2026-06-04T00:00:00Z")).unwrap();
+    fn test_convert_quota_response() {
+        let live = ApiQuotaResponse {
+            buckets: Some(vec![
+                ApiQuotaBucket {
+                    model_id: "gemini-2.5-flash".to_string(),
+                    remaining_fraction: 0.6,
+                    reset_time: Some("2026-06-13T11:31:03Z".to_string()),
+                    token_type: Some("REQUESTS".to_string()),
+                },
+                ApiQuotaBucket {
+                    model_id: "gemini-2.5-pro".to_string(),
+                    remaining_fraction: 0.0,
+                    reset_time: Some("2026-06-13T11:30:52Z".to_string()),
+                    token_type: Some("REQUESTS".to_string()),
+                },
+            ]),
+        };
 
-        let five_hour = snapshot.five_hour.unwrap();
-        assert_eq!(snapshot.model.as_deref(), Some("Gemini 3.5 Flash (Medium)"));
-        assert_eq!(five_hour.used, 20.0);
-        assert_eq!(five_hour.remaining, 80.0);
-        assert_eq!(five_hour.resets_at, "2026-06-05T06:27:09Z");
-        assert!(snapshot.seven_day.is_none());
-    }
+        let snapshot = convert_quota_response(&live).unwrap();
+        
+        let flash = snapshot.five_hour.unwrap();
+        assert_eq!(flash.remaining, 60.0);
+        assert_eq!(flash.used, 40.0);
+        assert_eq!(flash.resets_at, "2026-06-13T11:31:03Z");
 
-    #[test]
-    fn resets_elapsed_window_to_fresh_state() {
-        let json = r#"{
-            "payload": {
-                "defaultAgentModelId": "gemini-3.5-flash-low",
-                "models": {
-                    "gemini-3.5-flash-low": {
-                        "displayName": "Gemini 3.5 Flash (Medium)",
-                        "quotaInfo": {
-                            "remainingFraction": 0.4,
-                            "resetTime": "2026-06-04T00:00:00Z"
-                        }
-                    }
-                }
-            }
-        }"#;
-        let value: Value = serde_json::from_str(json).unwrap();
-        let snapshot = extract_snapshot(&value, at("2026-06-04T01:00:00Z")).unwrap();
-        let five_hour = snapshot.five_hour.unwrap();
-        assert_eq!(five_hour.used, 0.0);
-        assert_eq!(five_hour.remaining, 100.0);
-        assert_eq!(five_hour.resets_at, "");
-    }
+        let pro = snapshot.seven_day.unwrap();
+        assert_eq!(pro.remaining, 0.0);
+        assert_eq!(pro.used, 100.0);
+        assert_eq!(pro.resets_at, "2026-06-13T11:30:52Z");
 
-    #[test]
-    fn extracts_secondary_model_quota_from_api_v1_snapshot() {
-        let json = r#"{
-            "version": 1,
-            "source": "authorized",
-            "payload": {
-                "defaultAgentModelId": "gemini-3.5-flash-low",
-                "models": {
-                    "gemini-3.5-flash-low": {
-                        "displayName": "Gemini 3.5 Flash (Medium)",
-                        "quotaInfo": {
-                            "remainingFraction": 0.8,
-                            "resetTime": "2026-06-05T06:27:09Z"
-                        }
-                    },
-                    "gpt-oss-120b-medium": {
-                        "displayName": "GPT-OSS 120B (Medium)",
-                        "quotaInfo": {
-                            "remainingFraction": 0.9,
-                            "resetTime": "2026-06-06T12:00:00Z"
-                        }
-                    }
-                }
-            }
-        }"#;
-        let value: Value = serde_json::from_str(json).unwrap();
-        let snapshot = extract_snapshot(&value, at("2026-06-04T00:00:00Z")).unwrap();
-
-        let five_hour = snapshot.five_hour.unwrap();
-        assert_eq!(five_hour.remaining, 80.0);
-
-        let seven_day = snapshot.seven_day.unwrap();
-        assert_eq!(seven_day.remaining, 90.0);
-        assert_eq!(seven_day.resets_at, "2026-06-06T12:00:00Z");
+        assert_eq!(snapshot.model.as_deref(), Some("gemini-2.5-flash"));
     }
 }
