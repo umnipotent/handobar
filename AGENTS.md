@@ -71,12 +71,14 @@ handobar/
 
 ## 에이전트 작업 방식 (Claude × Codex MCP)
 
-Claude(Claude Code)로 이 프로젝트를 작업할 때, **실제 코드 구현(파일 작성·수정 등)은 Claude가 직접
-수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를 통해 **GPT-5.5 medium fast** 모델에
-구현을 위임한다.
+Claude(Claude Code)로 이 프로젝트를 작업할 때, **코드베이스 탐색(파일 읽기·grep 등 조사)과 실제 코드
+구현(파일 작성·수정 등)은 Claude가 직접 수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를
+통해 **GPT-5.5 medium fast** 모델에 위임한다.
 
-- Claude의 역할: 요구사항 분석, 작업 계획 수립, codex MCP 호출(구현 지시), 결과 검토·검증.
-- Codex(GPT-5.5 medium fast)의 역할: 실제 코드 작성·수정 등 구현 작업 수행.
+- Claude의 역할: 요구사항 분석, 작업 계획 수립, codex MCP 호출(탐색·구현 지시), 결과 검토·검증.
+- Codex(GPT-5.5 medium fast)의 역할: 코드베이스 탐색·조사 및 실제 코드 작성·수정 수행.
+- 탐색만 필요한 단계는 codex를 **`read-only` 샌드박스**로 호출해 조사 결과만 보고받고,
+  구현 단계는 `workspace-write`(fullAuto)로 호출한다.
 
 ### Git 작업 정책
 

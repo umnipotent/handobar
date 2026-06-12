@@ -70,6 +70,31 @@ src-tauri/
 `src-tauri/target/`, `dist/`, `node_modules/`, `src-tauri/gen/` 은 자동 생성/빌드 산출물이므로
 커밋하지 않는다.
 
+## 아이콘 변경이 반영되지 않을 때 (강제 재빌드)
+
+앱/트레이 아이콘(`src-tauri/icons/*`)은 컴파일 시점에 바이너리에 바이트로 임베드된다. 다만 Tauri codegen이
+아이콘 파일 변경을 재빌드 의존성으로 추적하지 않아, 아이콘만 바꾸면 Rust 재빌드가 일어나지 않을 수 있다.
+
+해결 방법:
+
+```sh
+touch src-tauri/tauri.conf.json   # codegen 입력이라 변경 추적됨
+# 또는
+cargo clean -p handobar           # 해당 패키지 빌드 산출물 제거 후 재빌드
+```
+
+- `pnpm tauri dev` 실행 중이면 `touch src-tauri/tauri.conf.json` 만으로 자동 재빌드·재실행된다.
+- 배포용 `.app` 은 `pnpm tauri build` 를 다시 실행해야 새 아이콘이 반영된다.
+- 재빌드 후에도 Finder/Dock에 옛 아이콘이 보이면 macOS 아이콘 캐시 문제이므로 `killall Dock Finder` 로 해소한다.
+
+아이콘 세트를 다시 생성할 때는 루트의 `app-icon.svg`/`app-icon.png` 를 소스로 사용한다:
+
+```sh
+pnpm tauri icon app-icon.png
+```
+
+handobar는 macOS 전용 앱이므로 생성된 `src-tauri/icons/android`, `src-tauri/icons/ios` 폴더는 삭제한다.
+
 ## macOS 코드 서명 (키체인 접근 영속화)
 
 handobar는 사용량 토큰을 **OS 키체인**(`Claude Code-credentials`)에서 읽으므로, 앱이 그 항목에 접근할 때
