@@ -1,13 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="HandoBar Sisyphus icon">
-  <defs>
-    <linearGradient id="boulder" x1="14" y1="4" x2="27" y2="17" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fbbf24"/>
-      <stop offset="1" stop-color="#f97316"/>
-    </linearGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="HandoBar">
   <rect width="32" height="32" rx="8" fill="#111827"/>
-  <circle cx="20.7" cy="10.6" r="7.2" fill="url(#boulder)"/>
-  <path fill="#fff7ed" d="M11.3 14.1c1.4-1.3 3.4-1 5.2 1l3.4 3.7c.9 1 .8 2.4-.2 3.2-.9.8-2.3.7-3.2-.2l-3.4-3.5-2.9 5.2H6.7l3.8-7.8c.2-.6.4-1.1.8-1.6Z"/>
-  <path fill="#fff7ed" d="M14.8 14.3c1.8-2.6 4.1-4 7.5-4.8l.9 3c-2.7.7-4.3 1.7-5.6 3.6l-1.9 2.8-2.7-1.8 1.8-2.8Z"/>
-  <circle cx="10.9" cy="10.4" r="2.3" fill="#fff7ed"/>
+  <circle cx="19.5" cy="15.5" r="7.5" fill="#f59e0b"/>
+  <path d="M 17.8 24.9 A 9.6 9.6 0 0 1 11.6 10.0" fill="none" stroke="#f1f5f9" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="6.4" cy="9.3" r="2.7" fill="#f1f5f9"/>
 </svg>
