@@ -30,7 +30,10 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .tooltip(labels::TRAY_TOOLTIP)
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(tauri::image::Image::from_bytes(include_bytes!(
+                    "../icons/tray-template.png"
+                ))?)
+                .icon_as_template(true)
                 .menu(&menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id.as_ref() {
