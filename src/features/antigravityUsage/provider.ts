@@ -15,19 +15,19 @@ export const ANTIGRAVITY_USAGE_PROVIDER: UsageProvider = {
   webUrl: "https://antigravity.google/",
   showSevenDayCard: true,
   fiveHourTitle: (usage) => {
-    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
     return isGemini ? USAGE_COPY.windows.antigravity.geminiTitle : USAGE_COPY.windows.antigravity.nonGeminiTitle;
   },
   fiveHourHint: (usage) => {
-    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
     return isGemini ? USAGE_COPY.windows.antigravity.geminiHint : USAGE_COPY.windows.antigravity.nonGeminiHint;
   },
   sevenDayTitle: (usage) => {
-    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
     return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiTitle : USAGE_COPY.windows.antigravity.geminiTitle;
   },
   sevenDayHint: (usage) => {
-    const isGemini = usage?.model_tags?.includes("Gemini 계열") ?? true;
+    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
     return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiHint : USAGE_COPY.windows.antigravity.geminiHint;
   },
   nullWindowMeaning: "unknown",

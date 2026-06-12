@@ -107,7 +107,6 @@ fn extract_snapshot(value: &Value, now: chrono::DateTime<chrono::Utc>) -> Option
         .and_then(|value| value.as_str())
         .unwrap_or(default_model_id)
         .to_string();
-    let model_tags = derive_model_tags(models);
 
     let remaining = (remaining_fraction * 100.0).clamp(0.0, 100.0);
     let used = (100.0 - remaining).clamp(0.0, 100.0);
@@ -144,49 +143,33 @@ fn extract_snapshot(value: &Value, now: chrono::DateTime<chrono::Utc>) -> Option
         }
     }
 
+    let subscription = value
+        .get("source")
+        .and_then(|v| v.as_str())
+        .map(|s| {
+            if s.is_empty() {
+                s.to_string()
+            } else {
+                let mut chars = s.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            }
+        });
+
     Some(UsageSnapshot {
         five_hour: Some(window),
         seven_day: other_window,
-        subscription: None,
+        subscription,
         model: Some(model_name),
-        model_tags,
+        model_tags: None,
         fetched_at: now.to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,
     })
 }
 
-fn derive_model_tags(models: &serde_json::Map<String, Value>) -> Option<Vec<String>> {
-    let mut has_gemini = false;
-    let mut has_non_gemini = false;
-
-    for (model_id, value) in models {
-        if value.get("quotaInfo").is_none() {
-            continue;
-        }
-
-        let display_name = value.get("displayName").and_then(|value| value.as_str());
-        if is_gemini_model(model_id, display_name) {
-            has_gemini = true;
-        } else {
-            has_non_gemini = true;
-        }
-    }
-
-    let mut tags = Vec::new();
-    if has_gemini {
-        tags.push("Gemini 계열".to_string());
-    }
-    if has_non_gemini {
-        tags.push("비 Gemini 계열".to_string());
-    }
-
-    if tags.is_empty() {
-        None
-    } else {
-        Some(tags)
-    }
-}
 
 fn is_gemini_model(model_id: &str, display_name: Option<&str>) -> bool {
     model_id.starts_with("gemini-")

@@ -9,7 +9,8 @@ export const USAGE_COPY = {
     empty: "여유 있음",
     unknownReset: "리셋 시각 미상",
     // '5시간' 같은 윈도우 명칭은 혼란을 주므로 표시하지 않고 마감(리셋)만 보여준다.
-    item: (providerTitle: string, reset: string) => `${providerTitle} · ${reset}`,
+    item: (providerTitle: string, reset: string) =>
+      `${providerTitle} · ${reset}`,
   },
   cooldownMessage: (seconds: number) =>
     `요청 제한 중 · ${seconds}초 후 자동 재시도`,
@@ -51,10 +52,10 @@ export const USAGE_COPY = {
       hint: "7일 한도",
     },
     antigravity: {
-      geminiTitle: "Gemini 계열",
-      geminiHint: "Gemini 3.5/3.1 등 Google 모델 잔여 한도",
-      nonGeminiTitle: "타사/오픈소스 모델",
-      nonGeminiHint: "GPT, Sonnet, Opus 등 타사/오픈소스 모델 잔여 한도",
+      geminiTitle: "Gemini",
+      geminiHint: "5h 한도",
+      nonGeminiTitle: "Not Gemini",
+      nonGeminiHint: "5h 한도",
     },
   },
   usage: {
