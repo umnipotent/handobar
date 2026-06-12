@@ -71,14 +71,25 @@ handobar/
 
 ## 에이전트 작업 방식 (Claude × Codex MCP)
 
-Claude(Claude Code)로 이 프로젝트를 작업할 때, **코드베이스 탐색(파일 읽기·grep 등 조사)과 실제 코드
-구현(파일 작성·수정 등)은 Claude가 직접 수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를
-통해 **GPT-5.5 medium fast** 모델에 위임한다.
+Claude(Claude Code)로 이 프로젝트를 작업할 때, **실제 코드 구현(파일 작성·수정 등)은 Claude가 직접
+수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를 통해 **GPT-5.5 medium fast** 모델에
+구현을 위임한다(5시간 세션 잔여 40% 이하면 GPT-5.4-mini —
+[Codex 사용량 기반 모델 선택](#codex-사용량-기반-모델-선택) 참고). **분석·계획·코드베이스 탐색은 Claude가 직접 수행한다.**
 
-- Claude의 역할: 요구사항 분석, 작업 계획 수립, codex MCP 호출(탐색·구현 지시), 결과 검토·검증.
-- Codex(GPT-5.5 medium fast)의 역할: 코드베이스 탐색·조사 및 실제 코드 작성·수정 수행.
-- 탐색만 필요한 단계는 codex를 **`read-only` 샌드박스**로 호출해 조사 결과만 보고받고,
-  구현 단계는 `workspace-write`(fullAuto)로 호출한다.
+- Claude의 역할: 요구사항 분석, 코드베이스 탐색·조사(파일 읽기·grep 등), 작업 계획 수립,
+  codex MCP 호출(구현 지시), 결과 검토·검증.
+- Codex(GPT-5.5 medium fast)의 역할: 실제 코드 작성·수정 등 구현 작업 수행
+  (`workspace-write`/fullAuto 샌드박스로 호출).
+
+### Codex 사용량 기반 모델 선택
+
+codex MCP로 구현을 위임하기 전에 **Codex 잔여 사용량**을 확인한다. `~/.codex/sessions` 최신
+rollout(JSONL)의 마지막 `rate_limits` 스냅샷에서 읽으며(잔여 = 100 − `used_percent`,
+primary=5시간 세션 / secondary=주간), [사용량 추적](#사용량-추적)의 Codex provider와 같은 소스다.
+
+- **5시간 세션(primary) 잔여가 40% 초과**: 기본 모델 **GPT-5.5 medium fast** 를 사용한다.
+- **5시간 세션(primary) 잔여가 40% 이하**: **GPT-5.5를 쓰지 않고 GPT-5.4-mini** 를
+  사용해 한도를 아낀다.
 
 ### Git 작업 정책
 
