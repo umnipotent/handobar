@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "handobar",
+        "title": "HandoBar",
         "width": 800,
         "minWidth": 408,
         "height": 600
