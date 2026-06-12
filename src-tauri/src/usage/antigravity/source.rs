@@ -113,9 +113,40 @@ fn extract_snapshot(value: &Value, now: chrono::DateTime<chrono::Utc>) -> Option
     let used = (100.0 - remaining).clamp(0.0, 100.0);
     let window = UsageWindow::from_used_percent(used, resets_at).reset_if_elapsed(now);
 
+    let is_default_gemini = is_gemini_model(
+        default_model_id,
+        model.get("displayName").and_then(|v| v.as_str()),
+    );
+    let mut other_window = None;
+
+    for (model_id, m_value) in models {
+        if let Some(other_quota_info) = m_value.get("quotaInfo").and_then(|v| v.as_object()) {
+            let other_display = m_value.get("displayName").and_then(|v| v.as_str());
+            let is_other_gemini = is_gemini_model(model_id, other_display);
+            if is_default_gemini != is_other_gemini {
+                if let Some(other_rem_frac) = other_quota_info
+                    .get("remainingFraction")
+                    .and_then(|v| v.as_f64())
+                {
+                    let other_resets_at = other_quota_info
+                        .get("resetTime")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    let other_rem = (other_rem_frac * 100.0).clamp(0.0, 100.0);
+                    let other_used = (100.0 - other_rem).clamp(0.0, 100.0);
+                    let w = UsageWindow::from_used_percent(other_used, other_resets_at)
+                        .reset_if_elapsed(now);
+                    other_window = Some(w);
+                    break;
+                }
+            }
+        }
+    }
+
     Some(UsageSnapshot {
         five_hour: Some(window),
-        seven_day: None,
+        seven_day: other_window,
         subscription: None,
         model: Some(model_name),
         model_tags,
@@ -225,5 +256,41 @@ mod tests {
         assert_eq!(five_hour.used, 0.0);
         assert_eq!(five_hour.remaining, 100.0);
         assert_eq!(five_hour.resets_at, "");
+    }
+
+    #[test]
+    fn extracts_secondary_model_quota_from_api_v1_snapshot() {
+        let json = r#"{
+            "version": 1,
+            "source": "authorized",
+            "payload": {
+                "defaultAgentModelId": "gemini-3.5-flash-low",
+                "models": {
+                    "gemini-3.5-flash-low": {
+                        "displayName": "Gemini 3.5 Flash (Medium)",
+                        "quotaInfo": {
+                            "remainingFraction": 0.8,
+                            "resetTime": "2026-06-05T06:27:09Z"
+                        }
+                    },
+                    "gpt-oss-120b-medium": {
+                        "displayName": "GPT-OSS 120B (Medium)",
+                        "quotaInfo": {
+                            "remainingFraction": 0.9,
+                            "resetTime": "2026-06-06T12:00:00Z"
+                        }
+                    }
+                }
+            }
+        }"#;
+        let value: Value = serde_json::from_str(json).unwrap();
+        let snapshot = extract_snapshot(&value, at("2026-06-04T00:00:00Z")).unwrap();
+
+        let five_hour = snapshot.five_hour.unwrap();
+        assert_eq!(five_hour.remaining, 80.0);
+
+        let seven_day = snapshot.seven_day.unwrap();
+        assert_eq!(seven_day.remaining, 90.0);
+        assert_eq!(seven_day.resets_at, "2026-06-06T12:00:00Z");
     }
 }
