@@ -8,8 +8,9 @@ import { useUsage } from "./useUsage";
 import { WindowCard } from "./WindowCard";
 import { MemoCard } from "./MemoCard";
 import { AlertBanner } from "./AlertBanner";
-import type { CriticalWindowStatus, ProviderCriticalStatus, UsageWindow } from "./types";
+import type { CriticalWindowStatus, ProviderCriticalStatus } from "./types";
 import { loadCollapsed, loadMemo, saveCollapsed, saveMemo } from "./storage";
+import { resolveWindow, type NullWindowMeaning } from "./windowPolicy";
 import "./UsagePanel.css";
 
 export interface UsageProvider {
@@ -18,23 +19,13 @@ export interface UsageProvider {
   gateway: UsageGateway;
   storageKey: string;
   webUrl?: string;
+  // usage는 있는데 윈도우가 null일 때의 해석 (기본: 판단 불가 → 빈 카드)
+  nullWindowMeaning?: NullWindowMeaning;
 }
 
 interface UsagePanelProps extends UsageProvider {
   // 가능 사용량 20% 이하 윈도우를 상위(상태 표시줄)로 보고한다. 임계 아니면 null.
   onCriticalChange?: (providerId: string, status: ProviderCriticalStatus | null) => void;
-}
-
-/** usage가 있는데 윈도우가 null이면 0% 고갈로 처리한다. */
-function resolveWindow(
-  window: UsageWindow | null | undefined,
-  hasUsage: boolean,
-): UsageWindow | null {
-  if (window != null) return window;
-  // usage 자체가 없으면(로딩 전) null 그대로 유지
-  if (!hasUsage) return null;
-  // usage는 있는데 윈도우가 없으면 → 완전 고갈(0%)
-  return { remaining: 0, used: 100, resets_at: "" };
 }
 
 function DragHandleIcon() {
@@ -84,6 +75,7 @@ export function UsagePanel({
   gateway,
   storageKey,
   webUrl,
+  nullWindowMeaning = "unknown",
   onCriticalChange,
 }: UsagePanelProps) {
   const {
@@ -128,8 +120,11 @@ export function UsagePanel({
   };
 
   // exhausted 메시지 닫기 상태. 사용량이 0%→양수로 회복되면 자동 리셋.
-  const fiveHourRemaining = usage?.five_hour?.remaining ?? (usage != null ? 0 : null);
-  const sevenDayRemaining = usage?.seven_day?.remaining ?? (usage != null ? 0 : null);
+  const hasUsage = usage != null;
+  const fiveHourData = resolveWindow(usage?.five_hour, hasUsage, nullWindowMeaning);
+  const sevenDayData = resolveWindow(usage?.seven_day, hasUsage, nullWindowMeaning);
+  const fiveHourRemaining = fiveHourData?.remaining ?? null;
+  const sevenDayRemaining = sevenDayData?.remaining ?? null;
   const [fiveHourExhaustedDismissed, setFiveHourExhaustedDismissed] = useState(false);
   const [sevenDayExhaustedDismissed, setSevenDayExhaustedDismissed] = useState(false);
 
@@ -145,10 +140,6 @@ export function UsagePanel({
     setSevenDayCollapsed(next);
     saveCollapsed(`${storageKey}.sevenDay.collapsed`, next);
   };
-
-  const hasUsage = usage != null;
-  const fiveHourData = resolveWindow(usage?.five_hour, hasUsage);
-  const sevenDayData = resolveWindow(usage?.seven_day, hasUsage);
 
   // 가능 사용량 20% 이하 윈도우를 모아 상위(상태 표시줄)로 보고한다.
   // 주간을 먼저 담아 둘 다 임계일 때 주간 마감이 우선 표시되도록 한다(windows[0]).
