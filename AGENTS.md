@@ -19,9 +19,9 @@
 | 번들러 | **Vite 7** | 개발 서버(포트 `1420` 고정) 및 빌드 |
 | 패키지 매니저 | **pnpm** | `pnpm-workspace.yaml` 사용 |
 
-> 현재 상태: 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 **Claude Code·Codex 잔여 사용량**
+> 현재 상태: 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 **Claude Code·Codex·Antigravity 잔여 사용량**
 > 표시 UI(마지막 갱신 시각 포함)가 구현됨([사용량 추적](#사용량-추적) 참고).
-> 사용량 기능은 `feature-codex` 브랜치에서 개발 중(미릴리스). **Antigravity** 연동은 미구현.
+> 사용량 기능은 `feature-codex` 브랜치에서 개발 중(미릴리스).
 
 ## 디렉터리 구조
 
@@ -171,8 +171,8 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 
 1. **트레이 동작 개선**: 트레이 아이콘·메뉴는 구현됨(`lib.rs`). 메인 윈도우는 닫기 시 숨김 처리되며 트레이에 상주한다.
    - 다음 단계: 일반 윈도우(800x600)를 트레이 앵커 기반 **팝오버 형태**로 전환.
-2. **다른 도구 사용량 연동**: **Claude Code·Codex** 는 구현 완료([사용량 추적](#사용량-추적)).
-   남은 작업은 **Antigravity** 의 사용량 소스를 조사해 같은 provider 구조로 추가하는 것([`hb-usage` 스킬](.agents/skills/usage/SKILL.md)의 추가 절차 참고).
+2. **다른 도구 사용량 연동**: **Claude Code·Codex·Antigravity** 는 구현 완료([사용량 추적](#사용량-추적)).
+   새 provider 추가 시에는 같은 provider 구조를 따른다([`hb-usage` 스킬](.agents/skills/usage/SKILL.md)의 추가 절차 참고).
 3. **권한(ACL)**: 파일 시스템·네트워크 접근 등 신규 기능은 `src-tauri/capabilities/default.json` 의
    `permissions` 에 명시해야 동작함(자세한 절차는 [`hb-tauri` 스킬](.agents/skills/tauri/SKILL.md)).
    `src-tauri/gen/schemas/` 는 자동 생성물이므로 직접 수정 금지.
