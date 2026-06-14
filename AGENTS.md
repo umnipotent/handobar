@@ -44,6 +44,7 @@ handobar/
 │  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
 │  ├─ icons/            # 앱/트레이 아이콘
 │  └─ Cargo.toml        # Rust 의존성
+├─ .github/workflows/    # CI: release.yml (태그 push → macOS 빌드 → GitHub Release에 .dmg 첨부)
 ├─ docs/                 # 환경 구성 메모 (brew.md, tauri.md)
 ├─ public/               # 정적 에셋
 └─ vite.config.ts        # 포트 1420 고정, src-tauri watch 제외
@@ -224,6 +225,22 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
 > 현재 버전: **`0.2.0`** (스킬 인프라 정비: hb-commit·hb-version, 심볼릭 링크 문서화).
+
+### 자동 빌드·배포 (GitHub Actions)
+
+릴리스 산출물은 **GitHub Actions(`.github/workflows/release.yml`)** 가 빌드해 GitHub Release에 첨부한다.
+npm/Homebrew가 아니라 **`.dmg`/`.app` 번들을 Release에서 받아 실행**하는 방식이다(Tauri 표준 배포).
+
+- **트리거**: 순수 버전 태그(`[0-9]+.[0-9]+.[0-9]+`, 예 `0.2.0`) push 또는 수동 실행(`workflow_dispatch`).
+- **러너/빌드**: `macos-latest` 에서 pnpm 10 + Node LTS + Rust 타깃(`aarch64`/`x86_64`) 설치 후
+  `tauri-action` 으로 **universal 바이너리**(`--target universal-apple-darwin`)를 빌드 → Intel·Apple Silicon 양쪽 Mac에서 동작.
+- **서명**: 현재 **ad-hoc**(Apple Developer 계정 없음). CI에서만 `-c '{"bundle":{"macOS":{"signingIdentity":null}}}'`
+  로 로컬 전용 `handobar-dev` 서명을 무력화하고 `APPLE_SIGNING_IDENTITY: '-'` 로 ad-hoc 서명한다
+  (`tauri.conf.json` 원본은 로컬 개발 서명을 유지). ad-hoc 산출물은 **첫 실행 시 Finder 우클릭 → 열기**로 Gatekeeper를
+  한 번 허용해야 하며, 키체인 "항상 허용"이 빌드마다 리셋될 수 있다(추후 Developer ID 서명/공증으로 안정화 가능 —
+  [macOS 코드 서명](#macos-코드-서명-키체인-항상-허용-유지) 참고).
+- **사용 흐름**: ① 워크플로 파일을 기본 브랜치에 push → ② 릴리스 커밋에 순수 버전 태그를 push → Actions가 빌드·Release 생성 →
+  ③ 다른 Mac에서 그 Release의 `.dmg` 를 받아 설치. (커밋·태그 push는 [Git 작업 정책](#에이전트-작업-방식-claude--codex-mcp)대로 유저가 직접 수행.)
 
 ## 스킬(Skills)
 
