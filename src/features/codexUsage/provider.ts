@@ -12,7 +12,4 @@ export const CODEX_USAGE_PROVIDER: UsageProvider = {
   gateway: createTauriUsageGateway("get_codex_usage"),
   storageKey: "handobar.codex.intervalMin",
   webUrl: "https://chatgpt.com/codex/cloud/settings/analytics",
-  // rollout이 윈도우를 null로 기록하면 완전 고갈 → 잔여 0%로 표시
-  nullWindowMeaning: "exhausted",
 };
-

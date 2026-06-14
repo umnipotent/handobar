@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { clampIntervalMin, loadIntervalMin, loadPanelOrder, saveIntervalMin, savePanelOrder } from "./storage";
+import {
+  clampIntervalMin,
+  loadIntervalMin,
+  loadPanelOrder,
+  loadTraySelection,
+  saveIntervalMin,
+  savePanelOrder,
+  saveTraySelection,
+} from "./storage";
 import { DEFAULT_INTERVAL, MAX_INTERVAL, MIN_INTERVAL } from "./config";
 
 const TEST_KEY = "handobar.test.intervalMin";
@@ -113,5 +121,26 @@ describe("panel order storage", () => {
     localStorage.setItem("handobar.usage.panelOrder", JSON.stringify(["unknown", "codex"]));
 
     expect(loadPanelOrder(defaultOrder)).toEqual(["codex", "claude"]);
+  });
+});
+
+describe("tray selection storage", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("should return null when tray selection is empty", () => {
+    expect(loadTraySelection("claude")).toBeNull();
+
+    saveTraySelection("claude", null);
+    expect(loadTraySelection("claude")).toBeNull();
+  });
+
+  it("should save and load selected tray window id per provider", () => {
+    saveTraySelection("claude", "five_hour");
+    saveTraySelection("antigravity", "gemini");
+
+    expect(loadTraySelection("claude")).toBe("five_hour");
+    expect(loadTraySelection("antigravity")).toBe("gemini");
   });
 });

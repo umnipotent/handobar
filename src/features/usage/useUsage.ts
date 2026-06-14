@@ -108,10 +108,11 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
         const nextUsage = await gateway.fetchUsage({ force: options?.force });
         setUsage(nextUsage);
 
-        if (nextUsage.five_hour && nextUsage.five_hour.remaining > THRESHOLD_DANGER) {
+        const nextSession = nextUsage.windows.find((window) => window.role === "session") ?? null;
+        if (nextSession && nextSession.remaining > THRESHOLD_DANGER) {
           setFastModeWarningDismissed(false);
         }
-        if (nextUsage.five_hour && nextUsage.five_hour.remaining > THRESHOLD_CRITICAL) {
+        if (nextSession && nextSession.remaining > THRESHOLD_CRITICAL) {
           setSubModelWarningDismissed(false);
         }
 
@@ -195,12 +196,13 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
   const cooldownLeft = cooling ? internalCooldownLeft : 0;
   const canManualRefresh = !internalCooling || cooldownElapsedSecs >= MANUAL_REFRESH_UNLOCK_SECS;
   const shouldForceManualRefresh = internalCooling && canManualRefresh;
+  const session = usage?.windows.find((window) => window.role === "session") ?? null;
 
   const isFastModeWarningTarget =
     usage !== null &&
-    usage.five_hour !== null &&
-    usage.five_hour.remaining <= THRESHOLD_DANGER &&
-    usage.five_hour.remaining > THRESHOLD_CRITICAL;
+    session !== null &&
+    session.remaining <= THRESHOLD_DANGER &&
+    session.remaining > THRESHOLD_CRITICAL;
 
   const showingFastModeWarning = isFastModeWarningTarget && !fastModeWarningDismissed;
 
@@ -210,8 +212,8 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
 
   const isSubModelWarningTarget =
     usage !== null &&
-    usage.five_hour !== null &&
-    usage.five_hour.remaining <= THRESHOLD_CRITICAL;
+    session !== null &&
+    session.remaining <= THRESHOLD_CRITICAL;
 
   const showingSubModelWarning = isSubModelWarningTarget && !subModelWarningDismissed;
 
@@ -244,4 +246,3 @@ export function useUsage(gateway: UsageGateway, storageKey: string): UsageState 
     dismissError,
   };
 }
-

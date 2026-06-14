@@ -116,9 +116,21 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 - **Antigravity** (`get_antigravity_usage`): Antigravity IDE 자체 `state.vscdb`(SQLite)의 OAuth 토큰 → 필요 시
   Google OAuth 갱신 → `daily-cloudcode-pa.googleapis.com`의 `loadCodeAssist`/`fetchAvailableModels`(`User-Agent` 헤더
   필수, 없으면 403). 콕핏 확장 캐시나 Gemini CLI 쿼터가 아닌 **Antigravity 자체 쿼터**다. Gemini/타사(Claude·OSS 등)
-  모델을 `apiProvider`로 그룹핑해 각 카드의 대표 모델(잔여율, `defaultAgentModelId`/`agentModelSorts` 우선순위 기반
-  선정)과 추천 모델 칩(`five_hour_chips`/`seven_day_chips`)을 표시한다. `quotaInfo`는 있는데 `remainingFraction`이
+  모델을 `apiProvider`로 그룹핑해 각 윈도우의 대표 모델(잔여율, `defaultAgentModelId`/`agentModelSorts` 우선순위 기반
+  선정)과 추천 모델 칩(윈도우의 `chips`)을 표시한다. `quotaInfo`는 있는데 `remainingFraction`이
   없으면 소진(0%)이다. 요금제 배지는 `paidTier.name`(없으면 `currentTier.name`) 기준.
+
+**도메인 모델은 윈도우-불가지(window-agnostic)다.** `UsageSnapshot` 은 고정 `five_hour`/`seven_day` 필드가 아니라
+**`windows: Vec<UsageWindow>`** 를 가지며, 각 `UsageWindow` 는 안정 `id`(예: `five_hour`,`seven_day`,`gemini`,`non_gemini`)·
+`role`(`session`/`long`/`other`)·`remaining`/`used`/`resets_at`·선택적 `chips` 를 담는다. 사용자에게 보이는 라벨은
+백엔드에 두지 않고(프론트 `copy.ts` 의 id→라벨 맵 + provider descriptor 의 `windowLabel`/`windowHint` 오버라이드)
+백엔드는 id+role+수치만 내려준다. `role: session` 윈도우가 트레이 표시값·fast-mode/세션 경고의 기준이며,
+null-window 의미(미사용→100%/소진→0%/omit)는 각 provider 백엔드가 직접 결정한다(프론트의 옛 `windowPolicy` 제거).
+프론트는 windows 를 순회해 **모든 카드를 항상 렌더**하며 각 카드는 사용자가 접기/펼치기 가능하다(`…​.window.<id>.collapsed`).
+칩이 있는 카드는 카드 내부 토글로 **모델 칩 목록 전체를 보이기/숨기기**(`…​.window.<id>.chipsCollapsed`). 트레이 표시는
+provider별 **윈도우 선택**으로 동작한다: `role: session` 윈도우가 있으면(Claude/Codex) 그 윈도우 on/off, 없으면
+(Antigravity) `off → 첫 윈도우 → 둘째 윈도우 → off` 순환(선택 저장 `…​.trayWindow`). 경고/에러/고갈 메시지는 카드
+묶음 다음·메모 카드 바로 위의 단일 영역(`.panel-messages`)에 모아 표시한다.
 
 구조는 과한 계층화를 피하면서 기능 단위로 분리한다. 백엔드는 `src-tauri/src/usage/` 아래에서 공유
 도메인(`model.rs`)·캐시(`cache.rs`) 위에 `claude/`·`codex/`·`antigravity/` provider 모듈을 둔다. 프론트엔드는

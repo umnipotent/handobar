@@ -62,13 +62,13 @@ pub(super) async fn get_claude_usage(force: bool) -> Result<UsageSnapshot, Strin
     // 리셋 시각이 지난 윈도우는 공통 규칙으로 갱신 처리(잔여 100%). Codex와 동일.
     let now = chrono::Utc::now();
     let usage = UsageSnapshot {
-        five_hour: windows.five_hour.map(|w| w.reset_if_elapsed(now)),
-        seven_day: windows.seven_day.map(|w| w.reset_if_elapsed(now)),
+        windows: vec![
+            windows.five_hour.reset_if_elapsed(now),
+            windows.seven_day.reset_if_elapsed(now),
+        ],
         subscription: creds.subscription_type,
         model: read_claude_model(),
         model_tags: None,
-        five_hour_chips: None,
-        seven_day_chips: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,

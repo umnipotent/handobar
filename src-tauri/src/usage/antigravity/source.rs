@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 use chrono::Utc;
 
 use crate::usage::antigravity::api::ApiModel;
-use crate::usage::model::{UsageSnapshot, UsageWindow};
+use crate::usage::model::{UsageSnapshot, UsageWindow, WindowRole};
 
 const API_PROVIDER_GEMINI: &str = "API_PROVIDER_GOOGLE_GEMINI";
 const API_PROVIDER_INTERNAL: &str = "API_PROVIDER_INTERNAL";
@@ -18,13 +18,13 @@ pub(super) fn convert(
 ) -> Result<UsageSnapshot, String> {
     let now = Utc::now();
     let priority_ranks = priority_ranks(default_agent_model_id, model_priority);
-    let five_hour_chips = model_chips(
+    let gemini_chips = model_chips(
         models
             .iter()
             .filter(|(_, model)| model.api_provider.as_deref() == Some(API_PROVIDER_GEMINI)),
         &priority_ranks,
     );
-    let seven_day_chips = model_chips(
+    let non_gemini_chips = model_chips(
         models.iter().filter(|(_, model)| {
             model.api_provider.as_deref() != Some(API_PROVIDER_GEMINI)
                 && model.api_provider.as_deref() != Some(API_PROVIDER_INTERNAL)
@@ -50,23 +50,32 @@ pub(super) fn convert(
         return Err("Antigravity 사용량을 확인할 대표 모델을 찾을 수 없습니다".to_string());
     }
 
-    let five_hour = gemini
-        .map(|(_, model)| usage_window(model, now))
-        .unwrap_or(None);
-    let seven_day = third_party
-        .map(|(_, model)| usage_window(model, now))
-        .unwrap_or(None);
+    let mut windows = Vec::new();
+    if let Some((_, model)) = gemini {
+        if let Some(window) = usage_window("gemini", WindowRole::Other, model, now, gemini_chips) {
+            windows.push(window);
+        }
+    }
+    if let Some((_, model)) = third_party {
+        if let Some(window) = usage_window(
+            "non_gemini",
+            WindowRole::Other,
+            model,
+            now,
+            non_gemini_chips,
+        ) {
+            windows.push(window);
+        }
+    }
+
     let model_name = gemini.and_then(|(_, model)| model.display_name.clone());
     let third_party_name = third_party.and_then(|(_, model)| model.display_name.clone());
 
     Ok(UsageSnapshot {
-        five_hour,
-        seven_day,
+        windows,
         subscription: tier_name.or_else(|| Some("Authorized".to_string())),
         model: model_name,
         model_tags: third_party_name.map(|name| vec![name]),
-        five_hour_chips,
-        seven_day_chips,
         fetched_at: now.to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,
@@ -151,13 +160,25 @@ fn has_quota_info(model: &ApiModel) -> bool {
     model.quota_info.is_some()
 }
 
-fn usage_window(model: &ApiModel, now: chrono::DateTime<Utc>) -> Option<UsageWindow> {
+fn usage_window(
+    id: &str,
+    role: WindowRole,
+    model: &ApiModel,
+    now: chrono::DateTime<Utc>,
+    chips: Option<Vec<String>>,
+) -> Option<UsageWindow> {
     let quota = model.quota_info.as_ref()?;
     let remaining_fraction = quota.remaining_fraction.unwrap_or(0.0);
     let used = 100.0 - (remaining_fraction * 100.0);
     Some(
-        UsageWindow::from_used_percent(used, quota.reset_time.clone().unwrap_or_default())
-            .reset_if_elapsed(now),
+        UsageWindow::new(
+            id,
+            role,
+            used,
+            quota.reset_time.clone().unwrap_or_default(),
+            chips,
+        )
+        .reset_if_elapsed(now),
     )
 }
 
@@ -199,6 +220,10 @@ mod tests {
             recommended,
             quota_info: None,
         }
+    }
+
+    fn window<'a>(snapshot: &'a UsageSnapshot, id: &str) -> Option<&'a UsageWindow> {
+        snapshot.windows.iter().find(|window| window.id == id)
     }
 
     #[test]
@@ -251,23 +276,25 @@ mod tests {
 
         let snapshot = convert(&models, None, &[], Some("Pro".to_string())).unwrap();
 
-        let five_hour = snapshot.five_hour.unwrap();
-        assert_eq!(five_hour.remaining, 72.0);
-        assert_eq!(five_hour.used, 28.0);
-        assert_eq!(five_hour.resets_at, "2999-06-13T00:00:00Z");
+        let gemini = window(&snapshot, "gemini").unwrap();
+        assert_eq!(&gemini.role, &WindowRole::Other);
+        assert_eq!(gemini.remaining, 72.0);
+        assert_eq!(gemini.used, 28.0);
+        assert_eq!(gemini.resets_at, "2999-06-13T00:00:00Z");
 
-        let seven_day = snapshot.seven_day.unwrap();
-        assert_eq!(seven_day.remaining, 25.0);
-        assert_eq!(seven_day.used, 75.0);
-        assert_eq!(seven_day.resets_at, "2999-06-14T00:00:00Z");
+        let non_gemini = window(&snapshot, "non_gemini").unwrap();
+        assert_eq!(&non_gemini.role, &WindowRole::Other);
+        assert_eq!(non_gemini.remaining, 25.0);
+        assert_eq!(non_gemini.used, 75.0);
+        assert_eq!(non_gemini.resets_at, "2999-06-14T00:00:00Z");
 
         assert_eq!(snapshot.model.as_deref(), Some("Gemini B"));
         assert_eq!(snapshot.model_tags, Some(vec!["Third A".to_string()]));
         assert_eq!(
-            snapshot.five_hour_chips,
-            Some(vec!["Gemini A".to_string(), "Gemini B".to_string()])
+            gemini.chips.as_ref(),
+            Some(&vec!["Gemini A".to_string(), "Gemini B".to_string()])
         );
-        assert!(snapshot.seven_day_chips.is_none());
+        assert!(non_gemini.chips.is_none());
         assert_eq!(snapshot.subscription.as_deref(), Some("Pro"));
     }
 
@@ -312,7 +339,7 @@ mod tests {
         let snapshot = convert(&models, Some("gemini-3.5-flash-low"), &priority, None).unwrap();
 
         assert_eq!(snapshot.model.as_deref(), Some("Gemini 3.5 Flash (Medium)"));
-        assert_eq!(snapshot.five_hour.unwrap().remaining, 84.0);
+        assert_eq!(window(&snapshot, "gemini").unwrap().remaining, 84.0);
     }
 
     #[test]
@@ -349,7 +376,7 @@ mod tests {
             snapshot.model_tags,
             Some(vec!["Claude Sonnet 4.6 (Thinking)".to_string()])
         );
-        assert_eq!(snapshot.seven_day.unwrap().remaining, 66.0);
+        assert_eq!(window(&snapshot, "non_gemini").unwrap().remaining, 66.0);
     }
 
     #[test]
@@ -445,12 +472,12 @@ mod tests {
         let snapshot = convert(&models, None, &priority, None).unwrap();
 
         assert_eq!(
-            snapshot.five_hour_chips,
-            Some(vec!["Gemini B".to_string(), "Gemini Shared".to_string()])
+            window(&snapshot, "gemini").unwrap().chips.as_ref(),
+            Some(&vec!["Gemini B".to_string(), "Gemini Shared".to_string()])
         );
         assert_eq!(
-            snapshot.seven_day_chips,
-            Some(vec!["Claude Model".to_string(), "OSS Model".to_string()])
+            window(&snapshot, "non_gemini").unwrap().chips.as_ref(),
+            Some(&vec!["Claude Model".to_string(), "OSS Model".to_string()])
         );
     }
 
@@ -480,7 +507,7 @@ mod tests {
         let snapshot = convert(&models, Some("gemini-3.5-flash-low"), &priority, None).unwrap();
 
         assert_eq!(snapshot.model.as_deref(), Some("Gemini 2.5 Pro"));
-        assert_eq!(snapshot.five_hour.unwrap().remaining, 50.0);
+        assert_eq!(window(&snapshot, "gemini").unwrap().remaining, 50.0);
     }
 
     #[test]
@@ -528,11 +555,11 @@ mod tests {
         );
 
         let snapshot = convert(&models, None, &[], None).unwrap();
-        let five_hour = snapshot.five_hour.unwrap();
+        let gemini = window(&snapshot, "gemini").unwrap();
 
-        assert_eq!(five_hour.remaining, 0.0);
-        assert_eq!(five_hour.used, 100.0);
-        assert_eq!(five_hour.resets_at, "2999-06-13T00:00:00Z");
+        assert_eq!(gemini.remaining, 0.0);
+        assert_eq!(gemini.used, 100.0);
+        assert_eq!(gemini.resets_at, "2999-06-13T00:00:00Z");
         assert_eq!(snapshot.model.as_deref(), Some("Gemini A"));
     }
 
@@ -546,7 +573,7 @@ mod tests {
 
         let snapshot = convert(&models, None, &[], None).unwrap();
 
-        assert!(snapshot.five_hour.is_none());
+        assert!(window(&snapshot, "gemini").is_none());
         assert_eq!(snapshot.model.as_deref(), Some("Gemini A"));
     }
 
@@ -575,11 +602,11 @@ mod tests {
         );
 
         let snapshot = convert(&models, None, &[], None).unwrap();
-        let seven_day = snapshot.seven_day.unwrap();
+        let non_gemini = window(&snapshot, "non_gemini").unwrap();
 
-        assert_eq!(seven_day.remaining, 0.0);
-        assert_eq!(seven_day.used, 100.0);
-        assert_eq!(seven_day.resets_at, "2999-06-14T00:00:00Z");
+        assert_eq!(non_gemini.remaining, 0.0);
+        assert_eq!(non_gemini.used, 100.0);
+        assert_eq!(non_gemini.resets_at, "2999-06-14T00:00:00Z");
         assert_eq!(snapshot.model_tags, Some(vec!["Third A".to_string()]));
     }
 
@@ -598,10 +625,10 @@ mod tests {
         );
 
         let snapshot = convert(&models, None, &[], None).unwrap();
-        let five_hour = snapshot.five_hour.unwrap();
+        let gemini = window(&snapshot, "gemini").unwrap();
 
-        assert_eq!(five_hour.remaining, 100.0);
-        assert_eq!(five_hour.used, 0.0);
-        assert_eq!(five_hour.resets_at, "");
+        assert_eq!(gemini.remaining, 100.0);
+        assert_eq!(gemini.used, 0.0);
+        assert_eq!(gemini.resets_at, "");
     }
 }

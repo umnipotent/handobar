@@ -6,24 +6,58 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// 한 시간 윈도우의 **잔여** 사용량. 직렬화 필드명은 프론트 계약이므로 유지한다.
+/// 윈도우의 의미 역할. 표시 텍스트는 프론트 copy 정책에 맡기고 백엔드는 안정 role만 내려준다.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum WindowRole {
+    Session,
+    Long,
+    Other,
+}
+
+/// 한 윈도우의 **잔여** 사용량. 직렬화 필드명은 프론트 계약이므로 유지한다.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UsageWindow {
+    /// 안정 식별자. 예: `five_hour`, `seven_day`, `gemini`, `non_gemini`.
+    pub id: String,
+    /// 표시 정책을 위한 역할.
+    pub role: WindowRole,
     /// 잔여 비율(0~100).
     pub remaining: f64,
     /// 사용 비율(0~100).
     pub used: f64,
     /// 윈도우가 리셋되는 시각(RFC3339).
     pub resets_at: String,
+    /// provider별 추천 모델 칩. 없으면 직렬화하지 않는다.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chips: Option<Vec<String>>,
 }
 
 impl UsageWindow {
+    pub fn new(
+        id: impl Into<String>,
+        role: WindowRole,
+        used: f64,
+        resets_at: String,
+        chips: Option<Vec<String>>,
+    ) -> Self {
+        UsageWindow {
+            id: id.into(),
+            role,
+            chips,
+            ..UsageWindow::from_used_percent(used, resets_at)
+        }
+    }
+
     /// 사용률(0~100)과 리셋 시각으로 윈도우를 만든다. 잔여는 `100 - used` 를 0~100으로 clamp.
     pub fn from_used_percent(used: f64, resets_at: String) -> Self {
         UsageWindow {
+            id: String::new(),
+            role: WindowRole::Other,
             remaining: (100.0 - used).clamp(0.0, 100.0),
             used,
             resets_at,
+            chips: None,
         }
     }
 
@@ -34,9 +68,12 @@ impl UsageWindow {
     /// provider 공통: Claude(API)·Codex(rollout) 모두 저장된 리셋 시각이 지난 구간을 같은 규칙으로 처리한다.
     pub fn reset_if_elapsed(self, now: DateTime<Utc>) -> Self {
         match DateTime::parse_from_rfc3339(&self.resets_at) {
-            Ok(reset) if reset.with_timezone(&Utc) <= now => {
-                UsageWindow::from_used_percent(0.0, String::new())
-            }
+            Ok(reset) if reset.with_timezone(&Utc) <= now => UsageWindow {
+                remaining: 100.0,
+                used: 0.0,
+                resets_at: String::new(),
+                ..self
+            },
             _ => self,
         }
     }
@@ -45,16 +82,12 @@ impl UsageWindow {
 /// 프론트로 전달하는 잔여 사용량 스냅샷. Claude·Codex 공통.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UsageSnapshot {
-    pub five_hour: Option<UsageWindow>,
-    pub seven_day: Option<UsageWindow>,
+    /// 표시 우선순위 순서의 사용량 윈도우 목록.
+    pub windows: Vec<UsageWindow>,
     pub subscription: Option<String>,
     pub model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_tags: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub five_hour_chips: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub seven_day_chips: Option<Vec<String>>,
     /// fetch 시각(RFC3339).
     pub fetched_at: String,
     /// rate limit 중이면 남은 대기 초(있을 때만 직렬화). Codex는 항상 `None`.
@@ -76,6 +109,9 @@ mod tests {
         assert_eq!(w.used, 45.5);
         assert_eq!(w.remaining, 54.5);
         assert_eq!(w.resets_at, "2026-06-10T15:00:00Z");
+        assert_eq!(w.id, "");
+        assert_eq!(w.role, WindowRole::Other);
+        assert_eq!(w.chips, None);
 
         // 음수 사용률 → 잔여 100 clamp
         assert_eq!(
@@ -97,11 +133,20 @@ mod tests {
 
     #[test]
     fn reset_if_elapsed_resets_passed_window() {
-        let w = UsageWindow::from_used_percent(90.0, "2026-06-10T08:00:00Z".to_string());
+        let w = UsageWindow::new(
+            "five_hour",
+            WindowRole::Session,
+            90.0,
+            "2026-06-10T08:00:00Z".to_string(),
+            Some(vec!["model-a".to_string()]),
+        );
         let after = w.reset_if_elapsed(at("2026-06-10T09:00:00Z"));
         assert_eq!(after.used, 0.0);
         assert_eq!(after.remaining, 100.0);
         assert_eq!(after.resets_at, "");
+        assert_eq!(after.id, "five_hour");
+        assert_eq!(after.role, WindowRole::Session);
+        assert_eq!(after.chips, Some(vec!["model-a".to_string()]));
     }
 
     #[test]

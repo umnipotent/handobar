@@ -169,6 +169,28 @@
   margin-top: 10px;
 }
 
+.chips-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-top: 10px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-primary-light);
+  background: #fff;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-title);
+  line-height: 1.2;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.chips-toggle-btn:hover {
+  background: var(--color-bg-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-border-primary-light);
+}
+
 .card-chip {
   font-size: calc(var(--font-size-xs) - 1px);
   color: var(--color-primary);

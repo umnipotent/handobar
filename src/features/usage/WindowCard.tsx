@@ -14,6 +14,9 @@ interface WindowCardProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   chips?: string[];
+  chipsCollapsible?: boolean;
+  chipsCollapsed?: boolean;
+  onToggleChips?: () => void;
 }
 
 export function WindowCard({
@@ -25,6 +28,9 @@ export function WindowCard({
   collapsed = false,
   onToggleCollapse,
   chips,
+  chipsCollapsible = false,
+  chipsCollapsed = false,
+  onToggleChips,
 }: WindowCardProps) {
   const remaining = data ? Math.round(data.remaining) : null;
   const isExhausted = remaining === 0;
@@ -49,6 +55,7 @@ export function WindowCard({
   }
 
   const { emoji } = USAGE_COPY.usage.exhausted;
+  const hasChips = chips != null && chips.length > 0;
 
   const headContent = (
     <>
@@ -121,14 +128,31 @@ export function WindowCard({
           )}
         </>
       )}
-      {!collapsed && chips && chips.length > 0 && (
-        <div className="card-chips">
-          {chips.map((chip) => (
-            <span key={chip} className="card-chip">
-              {chip}
-            </span>
-          ))}
-        </div>
+      {!collapsed && hasChips && (
+        <>
+          {chipsCollapsible && (
+            <button
+              type="button"
+              className="chips-toggle-btn"
+              aria-expanded={!chipsCollapsed}
+              aria-label={USAGE_COPY.controls.chipsToggle.aria(chips.length, chipsCollapsed)}
+              onClick={onToggleChips}
+            >
+              {chipsCollapsed
+                ? USAGE_COPY.controls.chipsToggle.show
+                : USAGE_COPY.controls.chipsToggle.hide}
+            </button>
+          )}
+          {!chipsCollapsed && (
+            <div className="card-chips">
+              {chips.map((chip) => (
+                <span key={chip} className="card-chip">
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   );

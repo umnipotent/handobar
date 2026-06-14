@@ -4,7 +4,7 @@ import { CLAUDE_USAGE_PROVIDER } from "./features/claudeUsage/provider";
 import { CODEX_USAGE_PROVIDER } from "./features/codexUsage/provider";
 import { UsagePanel, type UsageProvider } from "./features/usage/UsagePanel";
 import { StatusBar } from "./features/usage/StatusBar";
-import { loadBool, loadPanelOrder, saveBool, savePanelOrder, showInTrayKey } from "./features/usage/storage";
+import { loadPanelOrder, loadTraySelection, savePanelOrder, saveTraySelection } from "./features/usage/storage";
 import { updateTrayDisplay } from "./features/usage/trayDisplay";
 import type { ProviderCriticalStatus } from "./features/usage/types";
 import "./App.css";
@@ -35,10 +35,10 @@ function App() {
   const [dropTargetPanelId, setDropTargetPanelId] = useState<string | null>(null);
   const panelDragRef = useRef<PanelDragState | null>(null);
   const [criticalStatuses, setCriticalStatuses] = useState<Record<string, ProviderCriticalStatus>>({});
-  const [showInTray, setShowInTray] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(USAGE_PROVIDERS.map((p) => [p.id, loadBool(showInTrayKey(p.id))])),
+  const [traySelection, setTraySelection] = useState<Record<string, string | null>>(() =>
+    Object.fromEntries(USAGE_PROVIDERS.map((p) => [p.id, loadTraySelection(p.id)])),
   );
-  const [fiveHourRemainings, setFiveHourRemainings] = useState<Record<string, number | null>>({});
+  const [trayRemainings, setTrayRemainings] = useState<Record<string, number | null>>({});
   const orderedProviders = useMemo(() => sortProvidersByOrder(USAGE_PROVIDERS, panelOrder), [panelOrder]);
 
   const handleCriticalChange = useCallback(
@@ -56,13 +56,13 @@ function App() {
     [],
   );
 
-  const handleToggleShowInTray = useCallback((providerId: string, next: boolean) => {
-    saveBool(showInTrayKey(providerId), next);
-    setShowInTray((current) => ({ ...current, [providerId]: next }));
+  const handleTraySelectionChange = useCallback((providerId: string, next: string | null) => {
+    saveTraySelection(providerId, next);
+    setTraySelection((current) => ({ ...current, [providerId]: next }));
   }, []);
 
-  const handleFiveHourRemainingChange = useCallback((providerId: string, remaining: number | null) => {
-    setFiveHourRemainings((current) =>
+  const handleTrayRemainingChange = useCallback((providerId: string, remaining: number | null) => {
+    setTrayRemainings((current) =>
       current[providerId] === remaining ? current : { ...current, [providerId]: remaining },
     );
   }, []);
@@ -78,13 +78,13 @@ function App() {
 
   useEffect(() => {
     const items = orderedProviders
-      .filter((provider) => showInTray[provider.id])
+      .filter((provider) => traySelection[provider.id] != null)
       .map((provider) => ({
         glyph: provider.glyph,
-        remaining: fiveHourRemainings[provider.id] ?? null,
+        remaining: trayRemainings[provider.id] ?? null,
       }));
     void updateTrayDisplay(items);
-  }, [orderedProviders, showInTray, fiveHourRemainings]);
+  }, [orderedProviders, traySelection, trayRemainings]);
 
   function movePanel(draggedId: string, targetId: string) {
     if (draggedId === targetId) return;
@@ -180,9 +180,9 @@ function App() {
           <UsagePanel
             {...provider}
             onCriticalChange={handleCriticalChange}
-            showInTray={showInTray[provider.id] ?? false}
-            onToggleShowInTray={handleToggleShowInTray}
-            onFiveHourRemainingChange={handleFiveHourRemainingChange}
+            traySelection={traySelection[provider.id] ?? null}
+            onTraySelectionChange={handleTraySelectionChange}
+            onTrayRemainingChange={handleTrayRemainingChange}
           />
         </div>
         ))}

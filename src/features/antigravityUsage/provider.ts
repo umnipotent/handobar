@@ -13,25 +13,15 @@ export const ANTIGRAVITY_USAGE_PROVIDER: UsageProvider = {
   gateway: createTauriUsageGateway("get_antigravity_usage"),
   storageKey: "handobar.antigravity.intervalMin",
   webUrl: "https://antigravity.google/",
-  showSevenDayCard: true,
   showModelBadges: false,
-  fiveHourChips: (usage) => usage?.five_hour_chips,
-  sevenDayChips: (usage) => usage?.seven_day_chips,
-  fiveHourTitle: (usage) => {
-    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
-    return isGemini ? USAGE_COPY.windows.antigravity.geminiTitle : USAGE_COPY.windows.antigravity.nonGeminiTitle;
+  windowLabel: (id) => {
+    if (id === "gemini") return USAGE_COPY.windows.gemini.label;
+    if (id === "non_gemini") return USAGE_COPY.windows.non_gemini.label;
+    return id;
   },
-  fiveHourHint: (usage) => {
-    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
-    return isGemini ? USAGE_COPY.windows.antigravity.geminiHint : USAGE_COPY.windows.antigravity.nonGeminiHint;
+  windowHint: (id) => {
+    if (id === "gemini") return USAGE_COPY.windows.gemini.hint;
+    if (id === "non_gemini") return USAGE_COPY.windows.non_gemini.hint;
+    return "";
   },
-  sevenDayTitle: (usage) => {
-    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
-    return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiTitle : USAGE_COPY.windows.antigravity.geminiTitle;
-  },
-  sevenDayHint: (usage) => {
-    const isGemini = usage?.model?.toLowerCase().includes("gemini") ?? true;
-    return isGemini ? USAGE_COPY.windows.antigravity.nonGeminiHint : USAGE_COPY.windows.antigravity.geminiHint;
-  },
-  nullWindowMeaning: "unknown",
 };

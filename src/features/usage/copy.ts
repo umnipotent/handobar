@@ -28,6 +28,7 @@ export const USAGE_COPY = {
   },
   meta: {
     directView: "사용량 웹에서 보기",
+    dragHandle: "드래그하여 순서 변경",
   },
 
   memo: {
@@ -43,19 +44,21 @@ export const USAGE_COPY = {
     emptyView: "작성된 메모가 없습니다",
   },
   windows: {
-    fiveHour: {
-      title: "최근 5시간",
+    five_hour: {
+      label: "최근 5시간",
       hint: "5h 한도",
     },
-    sevenDay: {
-      title: "주간",
+    seven_day: {
+      label: "주간",
       hint: "7일 한도",
     },
-    antigravity: {
-      geminiTitle: "Gemini",
-      geminiHint: "5h 한도",
-      nonGeminiTitle: "Not Gemini",
-      nonGeminiHint: "5h 한도",
+    gemini: {
+      label: "Gemini",
+      hint: "모델 한도",
+    },
+    non_gemini: {
+      label: "Not Gemini",
+      hint: "모델 한도",
     },
   },
   usage: {
@@ -63,6 +66,7 @@ export const USAGE_COPY = {
     exhausted: {
       emoji: "💀",
       message: "토큰이 HP라면 당신은 죽었습니다",
+      windowMessage: (label: string) => `${label} · 토큰이 HP라면 당신은 죽었습니다`,
     },
   },
   reset: {
@@ -79,6 +83,13 @@ export const USAGE_COPY = {
     trayToggle: {
       off: "트레이 표시",
       on: "트레이 표시 중",
+      selected: (label: string) => `트레이: ${label}`,
+    },
+    chipsToggle: {
+      show: "모델 전체 보기",
+      hide: "모델 접기",
+      aria: (count: number, collapsed: boolean) =>
+        collapsed ? `모델 ${count}개 전체 보기` : `모델 ${count}개 접기`,
     },
     minuteOption: (minutes: number) => `${minutes}분`,
     loadingButton: "불러오는 중…",

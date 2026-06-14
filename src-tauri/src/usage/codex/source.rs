@@ -15,7 +15,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::usage::codex::messages;
-use crate::usage::model::{UsageSnapshot, UsageWindow};
+use crate::usage::model::{UsageSnapshot, UsageWindow, WindowRole};
 
 #[derive(Deserialize)]
 struct AuthTokens {
@@ -194,28 +194,39 @@ fn read_codex_model() -> Option<String> {
 fn to_snapshot(limits: RateLimits) -> UsageSnapshot {
     let subscription = read_subscription_from_auth();
     let model = read_codex_model();
+    let mut windows = Vec::new();
+    if let Some(window) = limits
+        .primary
+        .and_then(|w| to_window("five_hour", WindowRole::Session, w))
+    {
+        windows.push(window);
+    }
+    if let Some(window) = limits
+        .secondary
+        .and_then(|w| to_window("seven_day", WindowRole::Long, w))
+    {
+        windows.push(window);
+    }
+
     UsageSnapshot {
-        five_hour: limits.primary.and_then(to_window),
-        seven_day: limits.secondary.and_then(to_window),
+        windows,
         subscription,
         model,
         model_tags: None,
-        five_hour_chips: None,
-        seven_day_chips: None,
         fetched_at: chrono::Utc::now().to_rfc3339(),
         retry_after_secs: None,
         is_stale: false,
     }
 }
 
-fn to_window(window: RateWindow) -> Option<UsageWindow> {
+fn to_window(id: &str, role: WindowRole, window: RateWindow) -> Option<UsageWindow> {
     let resets_at = window
         .resets_at
         .and_then(epoch_to_rfc3339)
         .unwrap_or_default();
     // 리셋 시각이 지난 윈도우는 공통 규칙으로 갱신 처리(잔여 100%).
     Some(
-        UsageWindow::from_used_percent(window.used_percent, resets_at)
+        UsageWindow::new(id, role, window.used_percent, resets_at, None)
             .reset_if_elapsed(chrono::Utc::now()),
     )
 }
@@ -254,5 +265,21 @@ mod tests {
         let found = find_rate_limits(&value).unwrap();
         let limits: RateLimits = serde_json::from_value(found.clone()).unwrap();
         assert!(!limits.has_window());
+    }
+
+    #[test]
+    fn to_snapshot_emits_present_windows_only() {
+        let snapshot = to_snapshot(RateLimits {
+            primary: Some(RateWindow {
+                used_percent: 25.0,
+                resets_at: None,
+            }),
+            secondary: None,
+        });
+
+        assert_eq!(snapshot.windows.len(), 1);
+        assert_eq!(snapshot.windows[0].id, "five_hour");
+        assert_eq!(snapshot.windows[0].role, WindowRole::Session);
+        assert_eq!(snapshot.windows[0].remaining, 75.0);
     }
 }

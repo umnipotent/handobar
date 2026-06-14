@@ -12,6 +12,4 @@ export const CLAUDE_USAGE_PROVIDER: UsageProvider = {
   gateway: createTauriUsageGateway("get_claude_usage"),
   storageKey: "handobar.claude.intervalMin",
   webUrl: "https://claude.ai/new#settings/usage",
-  // API가 윈도우를 null로 주면 활성 윈도우 없음(미사용) → 잔여 100%로 표시
-  nullWindowMeaning: "fresh",
 };

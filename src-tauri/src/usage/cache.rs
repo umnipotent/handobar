@@ -120,21 +120,21 @@ fn normalize_retry_after(retry_after: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::usage::model::UsageWindow;
+    use crate::usage::model::{UsageWindow, WindowRole};
 
     fn mock_usage() -> UsageSnapshot {
         UsageSnapshot {
-            five_hour: Some(UsageWindow {
+            windows: vec![UsageWindow {
+                id: "five_hour".to_string(),
+                role: WindowRole::Session,
                 remaining: 50.0,
                 used: 50.0,
                 resets_at: "2026-06-10T15:00:00Z".to_string(),
-            }),
-            seven_day: None,
+                chips: None,
+            }],
             subscription: Some("pro".to_string()),
             model: None,
             model_tags: None,
-            five_hour_chips: None,
-            seven_day_chips: None,
             fetched_at: "2026-06-10T14:00:00Z".to_string(),
             retry_after_secs: None,
             is_stale: false,

@@ -122,6 +122,12 @@ h2 {
   font-weight: var(--font-weight-medium);
 }
 
+.panel-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .controls {
   display: flex;
   align-items: center;

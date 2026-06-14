@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::usage::claude::messages;
 use crate::usage::messages as shared;
-use crate::usage::model::UsageWindow;
+use crate::usage::model::{UsageWindow, WindowRole};
 
 const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
 const OAUTH_BETA: &str = "oauth-2025-04-20";
@@ -48,8 +48,8 @@ struct ApiUsage {
 
 /// fetch 성공 시 두 윈도우(잔여)로 변환해 반환.
 pub(super) struct UsageWindows {
-    pub five_hour: Option<UsageWindow>,
-    pub seven_day: Option<UsageWindow>,
+    pub five_hour: UsageWindow,
+    pub seven_day: UsageWindow,
 }
 
 pub(super) enum UsageApiError {
@@ -102,9 +102,24 @@ pub(super) async fn fetch_usage(access_token: &str) -> Result<UsageWindows, Usag
     })?;
 
     Ok(UsageWindows {
-        five_hour: api.five_hour.and_then(|w| UsageWindow::try_from(w).ok()),
-        seven_day: api.seven_day.and_then(|w| UsageWindow::try_from(w).ok()),
+        five_hour: api_window(
+            "five_hour",
+            WindowRole::Session,
+            api.five_hour.and_then(|w| UsageWindow::try_from(w).ok()),
+        ),
+        seven_day: api_window(
+            "seven_day",
+            WindowRole::Long,
+            api.seven_day.and_then(|w| UsageWindow::try_from(w).ok()),
+        ),
     })
+}
+
+fn api_window(id: &str, role: WindowRole, window: Option<UsageWindow>) -> UsageWindow {
+    let (used, resets_at) = window
+        .map(|w| (w.used, w.resets_at))
+        .unwrap_or_else(|| (0.0, String::new()));
+    UsageWindow::new(id, role, used, resets_at, None)
 }
 
 fn parse_retry_after(resp: &reqwest::Response) -> Option<u64> {
@@ -139,6 +154,7 @@ mod tests {
         .unwrap();
         assert_eq!(w.used, 28.0);
         assert_eq!(w.remaining, 72.0);
+        assert_eq!(w.role, WindowRole::Other);
     }
 
     #[test]
@@ -163,5 +179,16 @@ mod tests {
         let api: ApiUsage = serde_json::from_str(json).expect("파싱 성공해야 함");
         assert!(api.five_hour.is_some());
         assert!(api.seven_day.is_some());
+    }
+
+    #[test]
+    fn api_window_null_maps_to_fresh_usage() {
+        let w = api_window("five_hour", WindowRole::Session, None);
+
+        assert_eq!(w.id, "five_hour");
+        assert_eq!(w.role, WindowRole::Session);
+        assert_eq!(w.used, 0.0);
+        assert_eq!(w.remaining, 100.0);
+        assert_eq!(w.resets_at, "");
     }
 }
