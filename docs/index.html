@@ -285,7 +285,12 @@
           <div class="row g-4 align-items-center">
             <div class="col-lg-8">
               <h2 class="section-title mb-3">설치 안내</h2>
-              <p class="muted fs-5 mb-0">GitHub Releases에서 universal `.dmg`를 받아 Intel과 Apple Silicon Mac에 설치할 수 있습니다. 현재 ad-hoc 서명 빌드이므로 첫 실행은 Finder에서 우클릭 후 열기로 Gatekeeper를 한 번 허용하세요.</p>
+              <p class="muted fs-5 mb-2">GitHub Releases에서 universal <code>.dmg</code>를 받아 Intel과 Apple Silicon Mac에 설치할 수 있습니다. 현재 ad-hoc 서명 및 미공증 빌드이므로 다운로드한 앱의 첫 실행은 Gatekeeper가 차단합니다.</p>
+              <ul class="muted fs-5 mb-0">
+                <li>시스템 설정 → 개인정보 보호 및 보안에서 아래로 스크롤한 뒤 "'HandoBar'이(가) 차단되었습니다" 옆 "그래도 열기"를 클릭하세요.</li>
+                <li>또는 터미널에서 <code>xattr -dr com.apple.quarantine /Applications/HandoBar.app</code>를 실행하세요. 앱 경로가 다르면 맞게 조정해야 합니다.</li>
+                <li>직접 <code>pnpm tauri build</code>로 빌드한 앱은 다운로드 앱이 아니므로 차단되지 않습니다. 차단 화면에서 "휴지통으로 이동"은 누르지 마세요.</li>
+              </ul>
             </div>
             <div class="col-lg-4 text-lg-end">
               <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases"><svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>Releases 보기</a>

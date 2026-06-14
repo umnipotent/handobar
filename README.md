@@ -78,7 +78,10 @@ flowchart LR
 ## 설치
 
 - [Releases](../../releases)에서 `.dmg` 다운로드 (Intel · Apple Silicon universal 빌드)
-- ad-hoc 서명이므로 첫 실행은 **Finder 우클릭 → 열기**로 Gatekeeper 1회 허용 필요
+- ad-hoc 서명 및 미공증 빌드이므로 다운로드한 앱의 첫 실행은 Gatekeeper 차단 발생
+- 허용 방법: **시스템 설정 → 개인정보 보호 및 보안** → 아래로 스크롤 → "'HandoBar'이(가) 차단되었습니다" 옆 **"그래도 열기"** 클릭
+- 터미널 대안: `xattr -dr com.apple.quarantine /Applications/HandoBar.app` (앱 경로에 맞게 조정)
+- 직접 빌드(`pnpm tauri build`)는 다운로드 앱이 아니므로 Gatekeeper 차단 없음
 - 사용량 조회 시 키체인 접근 허용 프롬프트 → "항상 허용"(빌드 변경 시 재요청 가능)
 
 ## 개발
