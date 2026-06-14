@@ -46,3 +46,49 @@ Codex를 호출할 때 전달하는 프롬프트에는 다음 지침을 **상시
 - **결합도 차단 및 OCP**: 프론트엔드(`UsagePanel`, `WindowCard` 등)는 `windows` 배열을 단순히 순회하여 카드를 동적으로 그리는 일반화(Generalization)된 구조를 유지한다. 프로바이더 고유의 표기법이나 레이아웃 옵션은 `UsageProvider` 디스크립터 구조의 얇은 렌더링 주입 플래그/함수(`showModelBadges` 등)를 통해서만 삽입한다.
 - **스토리지 키 격리**: 윈도우 접힘 상태(`collapsed`)나 트레이 활성 타깃 등의 데이터를 저장할 때, 특정 식별자에 의존하여 하드코딩하지 않고 각 윈도우의 동적 `id`를 조합한 고유 스토리지 키 구조를 활용해 오염을 차단한다.
 
+## 6. 디렉터리 구조
+
+```
+handobar/
+├─ src/                  # React 프론트엔드 (UI)
+│  ├─ App.tsx            # 앱 조립 컴포넌트
+│  ├─ features/
+│  │  ├─ usage/         # 공유 사용량 UI/상태/gateway/포맷 (훅·패널·카드)
+│  │  ├─ claudeUsage/   # Claude provider 디스크립터(provider.ts)
+│  │  └─ codexUsage/    # Codex provider 디스크립터(provider.ts)
+│  ├─ main.tsx          # React 진입점
+│  └─ assets/
+├─ src-tauri/            # Tauri / Rust 백엔드
+│  ├─ src/
+│  │  ├─ lib.rs         # 앱 빌더 + 트레이 구성 + 커맨드 등록
+│  │  ├─ usage/         # 잔여 사용량: 공유 model/cache + provider 모듈(claude/codex)
+│  │  └─ main.rs        # 바이너리 진입점 → handobar_lib::run()
+│  ├─ tauri.conf.json    # 앱 설정 (identifier: dev.qus0in.handobar)
+│  ├─ capabilities/      # 권한(ACL) 정의 (default.json)
+│  ├─ icons/            # 앱/트레이 아이콘
+│  └─ Cargo.toml        # Rust 의존성
+├─ .github/workflows/    # CI: release.yml (태그 push → macOS 빌드 → GitHub Release에 .dmg 첨부)
+├─ docs/                 # 환경 구성 메모 (brew.md, tauri.md)
+├─ public/               # 정적 에셋
+└─ vite.config.ts        # 포트 1420 고정, src-tauri watch 제외
+```
+
+## 7. 심볼릭 링크
+
+저장소는 같은 내용을 도구별 표준 경로로 노출하기 위해 아래 심볼릭 링크를 사용한다. 모두 **상대 경로** 링크라 클론·다른 머신에서도 그대로 동작하며, Git에는 링크 자체(mode `120000`)로 커밋된다.
+
+| 링크 | 대상 | 목적 |
+| --- | --- | --- |
+| `CLAUDE.md` | `AGENTS.md` | Claude Code가 자동으로 읽는 `CLAUDE.md` 경로로 동일 가이드 노출 |
+| `.claude/skills` | `.agents/skills` | Claude Code 스킬 디렉터리(`.claude/skills`)로 프로젝트 스킬 전체 노출 |
+
+운영 시 주의:
+- **단일 출처는 링크 대상**(`AGENTS.md`, `.agents/skills/`). 링크 쪽을 직접 편집하지 말고 대상만 수정한다.
+- 새 스킬은 `.agents/skills/<name>/` 에 추가하면 디렉터리 링크를 통해 자동 노출된다 — 개별 링크 불필요.
+- 링크가 끊겼다면 다음으로 재생성한다:
+  ```sh
+  ln -s AGENTS.md CLAUDE.md
+  ln -s ../.agents/skills .claude/skills
+  ```
+
+
