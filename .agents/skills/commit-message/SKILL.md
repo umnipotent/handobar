@@ -40,7 +40,8 @@ handobar는 일반적인 [Conventional Commits](https://www.conventionalcommits.
 | `perf` | **성능** 개선 |
 | `test` | **테스트** 추가·수정 |
 | `build` | **빌드 시스템·의존성** 변경 (Cargo, pnpm, vite, tauri 등) |
-| `chore` | 그 외 잡무 (설정, 스캐폴드, 버전업, 자동 생성물 등) |
+| `release` | **버전 범프 및 릴리스 배포** (버전 번호 동기화 및 태깅) |
+| `chore` | 그 외 잡무 (설정, 스캐폴드, 자동 생성물 등) |
 | `ci` | **CI** 설정 변경 |
 
 ## 예시
@@ -73,5 +74,5 @@ feat: 버전 범프 워크플로를 version-bump 스킬로 분리
 
 ## 연관 스킬
 
-- [`hb-version`](../version-bump/SKILL.md): 버전업 시 `chore: x.y.z 버전업` 커밋을 만드는데,
+- [`hb-version`](../version-bump/SKILL.md): 버전업 시 `release: x.y.z 버전업 및 릴리스` 커밋을 만드는데,
   그 메시지도 이 컨벤션을 따른다.

@@ -45,7 +45,7 @@ python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
 형식은 다음과 같다.
 
 ```
-chore: x.y.z 버전업
+release: x.y.z 버전업 및 릴리스
 ```
 
 본문이 필요하면 주요 변경 요약을 한국어로 덧붙인다.
@@ -65,5 +65,5 @@ git tag -a x.y.z -m "x.y.z"
 ## 검증 체크리스트
 
 - [ ] 다섯 파일의 버전 문자열이 모두 동일한가 (`git diff` 로 확인)
-- [ ] 커밋 메시지가 `chore: x.y.z 버전업` 형식인가
+- [ ] 커밋 메시지가 `release: x.y.z 버전업 및 릴리스` 형식인가
 - [ ] 태그가 `v` 없는 순수 버전이고 버전업 커밋을 가리키는가
