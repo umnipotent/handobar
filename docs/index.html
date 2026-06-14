@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HandoBar</title>
+    <meta name="description" content="Codex, Claude Code, Antigravity 한도를 macOS 메뉴바에서 한눈에 확인하는 가벼운 트레이 앱">
+    <meta property="og:title" content="HandoBar">
+    <meta property="og:description" content="Codex, Claude Code, Antigravity 한도를 메뉴바에서 한눈에 확인하세요.">
+    <meta property="og:image" content="preview.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      :root{
+        --hb-primary:#29335c;
+        --hb-accent:#f3a712;
+        --hb-danger:#db2b39;
+        --hb-muted:#534d41;
+        --hb-bg:#f7f7f8;
+        --hb-surface:#ffffff;
+        --hb-border:#e4e4e7;
+      }
+
+      body {
+        margin: 0;
+        color: #18181b;
+        background: var(--hb-bg);
+        font-family: -apple-system, system-ui, "Pretendard", sans-serif;
+      }
+
+      .hero {
+        color: #fff;
+        background:
+          linear-gradient(135deg, rgba(41, 51, 92, 0.98), rgba(41, 51, 92, 0.84)),
+          radial-gradient(circle at top right, rgba(243, 167, 18, 0.34), transparent 34%);
+      }
+
+      .hero-inner {
+        min-height: 62vh;
+        display: flex;
+        align-items: center;
+        padding: 6rem 0 5rem;
+      }
+
+      .eyebrow {
+        color: var(--hb-accent);
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      .btn-hb-primary {
+        --bs-btn-color: #fff;
+        --bs-btn-bg: var(--hb-primary);
+        --bs-btn-border-color: var(--hb-primary);
+        --bs-btn-hover-color: #fff;
+        --bs-btn-hover-bg: #202849;
+        --bs-btn-hover-border-color: #202849;
+      }
+
+      .btn-hb-accent {
+        --bs-btn-color: #201600;
+        --bs-btn-bg: var(--hb-accent);
+        --bs-btn-border-color: var(--hb-accent);
+        --bs-btn-hover-color: #201600;
+        --bs-btn-hover-bg: #d9920f;
+        --bs-btn-hover-border-color: #d9920f;
+      }
+
+      .btn-hero-secondary {
+        --bs-btn-color: #201600;
+        --bs-btn-bg: var(--hb-accent);
+        --bs-btn-border-color: var(--hb-accent);
+        --bs-btn-hover-color: #201600;
+        --bs-btn-hover-bg: #d9920f;
+        --bs-btn-hover-border-color: #d9920f;
+      }
+
+      .hero .btn-hb-primary {
+        border-color: rgba(255, 255, 255, 0.32);
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
+      }
+
+      .preview-frame {
+        margin-top: -4rem;
+        border: 1px solid rgba(228, 228, 231, 0.72);
+        border-radius: 1rem;
+        background: var(--hb-surface);
+        box-shadow: 0 1.5rem 4rem rgba(24, 24, 27, 0.18);
+        overflow: hidden;
+      }
+
+      .section {
+        padding: 5rem 0;
+      }
+
+      .section-title {
+        color: var(--hb-primary);
+        font-weight: 800;
+      }
+
+      .feature-card {
+        height: 100%;
+        border: 1px solid var(--hb-border);
+        border-radius: 0.75rem;
+        background: var(--hb-surface);
+        padding: 1.5rem;
+      }
+
+      .tool-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+        background: #fff7df;
+      }
+
+      .accent-line {
+        width: 3rem;
+        height: 0.25rem;
+        border-radius: 999px;
+        background: var(--hb-accent);
+      }
+
+      .check-list {
+        display: grid;
+        gap: 0.85rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      .check-list li {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+
+      .check-list li::before {
+        content: "";
+        width: 0.65rem;
+        height: 0.65rem;
+        flex: 0 0 0.65rem;
+        margin-top: 0.45rem;
+        border-radius: 999px;
+        background: var(--hb-accent);
+      }
+
+      .install-band {
+        border-top: 1px solid var(--hb-border);
+        border-bottom: 1px solid var(--hb-border);
+        background: var(--hb-surface);
+      }
+
+      .muted {
+        color: var(--hb-muted);
+      }
+
+      .danger-text {
+        color: var(--hb-danger);
+      }
+
+      footer {
+        border-top: 1px solid var(--hb-border);
+        background: #fff;
+      }
+
+      footer a,
+      .link-hb {
+        color: var(--hb-primary);
+        font-weight: 700;
+      }
+
+      @media (max-width: 767.98px) {
+        .hero-inner {
+          min-height: auto;
+          padding: 4.5rem 0 5.5rem;
+        }
+
+        .display-2 {
+          font-size: 3rem;
+        }
+
+        .section {
+          padding: 3.5rem 0;
+        }
+
+        .preview-frame {
+          margin-top: -3rem;
+          border-radius: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="container hero-inner">
+        <div class="col-lg-9 col-xl-8">
+          <p class="eyebrow mb-3">macOS menu bar usage tracker</p>
+          <h1 class="display-2 fw-bold mb-4">HandoBar</h1>
+          <p class="fs-3 mb-5">Codex · Claude Code · Antigravity 한도를 메뉴바에서 한눈에</p>
+          <div class="d-flex flex-column flex-sm-row gap-3">
+            <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases">다운로드</a>
+            <a class="btn btn-hero-secondary btn-lg px-4" href="https://github.com/umnipotent/handobar">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="container">
+        <div class="preview-frame">
+          <img src="preview.png" class="img-fluid d-block" alt="HandoBar 앱 미리보기">
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="row align-items-end g-4 mb-4">
+            <div class="col-lg-7">
+              <div class="accent-line mb-3"></div>
+              <h2 class="section-title mb-3">지원 도구</h2>
+              <p class="muted fs-5 mb-0">자주 쓰는 AI 개발 도구의 남은 한도를 같은 화면에서 비교합니다.</p>
+            </div>
+          </div>
+          <div class="row g-4">
+            <div class="col-md-4">
+              <article class="feature-card">
+                <img class="tool-icon mb-4" src="https://cdn.simpleicons.org/claude/29335c" alt="" aria-hidden="true">
+                <h3 class="h4 fw-bold">Claude Code</h3>
+                <p class="muted mb-0">5시간 한도와 주간 한도를 카드로 분리해 표시합니다.</p>
+              </article>
+            </div>
+            <div class="col-md-4">
+              <article class="feature-card">
+                <img class="tool-icon mb-4" src="https://cdn.simpleicons.org/openai/29335c" alt="" aria-hidden="true">
+                <h3 class="h4 fw-bold">Codex</h3>
+                <p class="muted mb-0">5시간 세션과 주간 스냅샷을 읽어 남은 비율을 보여줍니다.</p>
+              </article>
+            </div>
+            <div class="col-md-4">
+              <article class="feature-card">
+                <img class="tool-icon mb-4" src="https://cdn.simpleicons.org/googlegemini/29335c" alt="" aria-hidden="true">
+                <h3 class="h4 fw-bold">Antigravity</h3>
+                <p class="muted mb-0">Gemini와 Not-Gemini 그룹, 추천 모델 칩, 요금제 정보를 함께 표시합니다.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section pt-0">
+        <div class="container">
+          <div class="row g-5 align-items-start">
+            <div class="col-lg-5">
+              <div class="accent-line mb-3"></div>
+              <h2 class="section-title mb-3">핵심 기능</h2>
+              <p class="muted fs-5 mb-0">백그라운드에 상주하며 필요한 정보만 빠르게 확인하도록 구성했습니다.</p>
+            </div>
+            <div class="col-lg-7">
+              <ul class="check-list fs-5">
+                <li>한도별 카드와 리셋 시각 표시</li>
+                <li>60%↓ 주황, <span class="danger-text fw-semibold">40%↓ 빨강</span> 경고</li>
+                <li>트레이에 표시할 도구와 윈도우 선택</li>
+                <li>카드 접기, 모델 칩 토글, 메모 지원</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="install-band section">
+        <div class="container">
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+              <h2 class="section-title mb-3">설치 안내</h2>
+              <p class="muted fs-5 mb-0">GitHub Releases에서 universal `.dmg`를 받아 Intel과 Apple Silicon Mac에 설치할 수 있습니다. 현재 ad-hoc 서명 빌드이므로 첫 실행은 Finder에서 우클릭 후 열기로 Gatekeeper를 한 번 허용하세요.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+              <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases">Releases 보기</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="py-4">
+      <div class="container d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center">
+        <p class="mb-0 muted">MIT 라이선스 · <a href="https://github.com/steipete/CodexBar">CodexBar</a>에서 영감</p>
+        <a class="link-hb" href="https://github.com/umnipotent/handobar">github.com/umnipotent/handobar</a>
+      </div>
+    </footer>
+  </body>
+</html>
