@@ -32,7 +32,7 @@ handobar의 버전 번호는 **다섯 곳**에 흩어져 있어 손으로 고치
 번들 스크립트로 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)을 한 번에 수정한다. 정규식 in-place 치환이라 cargo/네트워크가 필요 없다.
 
 ```bash
-python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
+python3 .agents/skills/hb-version/scripts/bump_version.py <x.y.z>
 ```
 
 스크립트는 각 파일에서 정확히 한 곳만 치환하며, 대상을 못 찾으면 즉시 실패한다(부분 적용 방지).
@@ -41,7 +41,7 @@ python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>
 ### 3. 커밋 (유저 직접 수행)
 
 커밋은 **유저가 직접 터미널에서 결정하고 실행**한다. 에이전트는 실행은 물론 메시지 제안도 하지
-않으며, 유저가 참고하는 메시지 컨벤션은 [`hb-commit` 스킬](../commit-message/SKILL.md)이고,
+않으며, 유저가 참고하는 메시지 컨벤션은 [`hb-commit` 스킬](../hb-commit/SKILL.md)이고,
 형식은 다음과 같다.
 
 ```

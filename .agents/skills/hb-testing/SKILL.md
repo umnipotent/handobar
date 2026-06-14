@@ -18,7 +18,7 @@ pnpm test
 
 - Rust 백엔드만 확인할 때는 `cargo test --manifest-path src-tauri/Cargo.toml` 을 우선 사용한다.
 - 프론트엔드 포맷/스토리지 테스트는 `pnpm test` 로 실행한다.
-- Tauri 실행/빌드 자체가 필요한 검증은 [`hb-tauri`](../tauri/SKILL.md) 스킬을 따른다.
+- Tauri 실행/빌드 자체가 필요한 검증은 [`hb-tauri`](../hb-tauri/SKILL.md) 스킬을 따른다.
 
 ## 백엔드 Rust 테스트
 
@@ -74,5 +74,5 @@ fn test_cache_flow() {
 
 ## 연관 스킬
 
-- [`hb-usage`](../usage/SKILL.md): 사용량 provider, 캐시, rate limit, stale 응답 정책.
-- [`hb-tauri`](../tauri/SKILL.md): Tauri 커맨드, invoke, ACL, 코드 서명, 앱 실행/빌드.
+- [`hb-usage`](../hb-usage/SKILL.md): 사용량 provider, 캐시, rate limit, stale 응답 정책.
+- [`hb-tauri`](../hb-tauri/SKILL.md): Tauri 커맨드, invoke, ACL, 코드 서명, 앱 실행/빌드.

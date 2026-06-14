@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HandoBar</title>
     <meta name="description" content="Codex, Claude Code, Antigravity 한도를 macOS 메뉴바에서 한눈에 확인하는 가벼운 트레이 앱">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="HandoBar">
@@ -22,6 +22,7 @@
     <meta name="twitter:image" content="https://umnipotent.github.io/handobar/preview.png">
     <meta name="twitter:image:alt" content="HandoBar 앱 미리보기">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="script.js" defer></script>
     <style>
       :root{
         --hb-primary:#29335c;
@@ -92,6 +93,22 @@
         box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
       }
 
+      .release-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        color: rgba(255, 255, 255, 0.88);
+        background: rgba(255, 255, 255, 0.1);
+        font-weight: 700;
+      }
+
+      .release-meta[data-release-state="error"] {
+        color: rgba(255, 255, 255, 0.68);
+      }
+
       .preview-frame {
         margin-top: -4rem;
         border: 1px solid rgba(228, 228, 231, 0.72);
@@ -99,6 +116,17 @@
         background: var(--hb-surface);
         box-shadow: 0 1.5rem 4rem rgba(24, 24, 27, 0.18);
         overflow: hidden;
+      }
+
+      .tray-preview {
+        padding: 4rem 0 1rem;
+      }
+
+      .tray-shot {
+        width: min(100%, 298px);
+        border-radius: 1rem;
+        background: #101114;
+        box-shadow: 0 1rem 2.5rem rgba(24, 24, 27, 0.2);
       }
 
       .section {
@@ -171,6 +199,11 @@
         color: var(--hb-danger);
       }
 
+      .release-note {
+        color: var(--hb-muted);
+        font-size: 0.95rem;
+      }
+
       footer {
         border-top: 1px solid var(--hb-border);
         background: #fff;
@@ -200,6 +233,10 @@
           margin-top: -3rem;
           border-radius: 0.75rem;
         }
+
+        .tray-preview {
+          padding-top: 3rem;
+        }
       }
     </style>
   </head>
@@ -209,9 +246,10 @@
         <div class="col-lg-9 col-xl-8">
           <p class="eyebrow mb-3">macOS menu bar usage tracker</p>
           <h1 class="display-2 fw-bold mb-4">HandoBar</h1>
-          <p class="fs-3 mb-5">Codex · Claude Code · Antigravity 한도를 메뉴바에서 한눈에</p>
+          <p class="fs-3 mb-4">Codex · Claude Code · Antigravity 한도를 메뉴바에서 한눈에</p>
+          <p class="release-meta mb-5" data-release-version data-release-state="loading">최신 릴리스 확인 중</p>
           <div class="d-flex flex-column flex-sm-row gap-3">
-            <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases"><svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>다운로드</a>
+            <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases" data-download-link><svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg><span data-download-label>다운로드</span></a>
             <a class="btn btn-hero-secondary btn-lg px-4" href="https://github.com/umnipotent/handobar"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>GitHub</a>
           </div>
         </div>
@@ -222,6 +260,26 @@
       <section class="container">
         <div class="preview-frame">
           <img src="preview.png" class="img-fluid d-block" alt="HandoBar 앱 미리보기">
+        </div>
+      </section>
+
+      <section class="tray-preview">
+        <div class="container">
+          <div class="row g-5 align-items-center">
+            <div class="col-lg-7">
+              <div class="accent-line mb-3"></div>
+              <h2 class="section-title mb-3">메뉴바에서 바로 확인하고 조작</h2>
+              <p class="muted fs-5 mb-4">Codex, Claude Code, Antigravity 잔여량을 메뉴바에 압축해 보여주고, 컨텍스트 메뉴에서 필요한 동작을 바로 실행합니다.</p>
+              <ul class="check-list fs-5">
+                <li>선택한 도구의 잔여 퍼센트를 메뉴바 아이콘에 표시</li>
+                <li>상세 패널 열기, 즉시 갱신, 앱 종료를 컨텍스트 메뉴로 실행</li>
+                <li>패널을 열지 않아도 세션 상황을 빠르게 확인</li>
+              </ul>
+            </div>
+            <div class="col-lg-5 text-lg-end text-center">
+              <img class="tray-shot" src="assets/tray-menu-preview.png" alt="HandoBar 메뉴바 아이콘과 컨텍스트 메뉴">
+            </div>
+          </div>
         </div>
       </section>
 
@@ -237,21 +295,21 @@
           <div class="row g-4">
             <div class="col-md-4">
               <article class="feature-card">
-                <img class="tool-icon mb-4" src="icons/claude.svg" alt="Claude" aria-hidden="true">
+                <img class="tool-icon mb-4" src="assets/claude.svg" alt="Claude" aria-hidden="true">
                 <h3 class="h4 fw-bold">Claude Code</h3>
-                <p class="muted mb-0">5시간 한도와 주간 한도를 카드로 분리해 표시합니다.</p>
+                <p class="muted mb-0">5시간 한도, 주간 한도, 요금제 정보를 함께 표시합니다.</p>
               </article>
             </div>
             <div class="col-md-4">
               <article class="feature-card">
-                <img class="tool-icon mb-4" src="icons/codex.svg" alt="Codex" aria-hidden="true">
+                <img class="tool-icon mb-4" src="assets/codex.svg" alt="Codex" aria-hidden="true">
                 <h3 class="h4 fw-bold">Codex</h3>
-                <p class="muted mb-0">5시간 세션과 주간 스냅샷을 읽어 남은 비율을 보여줍니다.</p>
+                <p class="muted mb-0">5시간 세션, 주간 스냅샷, 요금제 정보를 함께 표시합니다.</p>
               </article>
             </div>
             <div class="col-md-4">
               <article class="feature-card">
-                <img class="tool-icon mb-4" src="icons/antigravity.svg" alt="Antigravity" aria-hidden="true">
+                <img class="tool-icon mb-4" src="assets/antigravity.svg" alt="Antigravity" aria-hidden="true">
                 <h3 class="h4 fw-bold">Antigravity</h3>
                 <p class="muted mb-0">Gemini와 Not-Gemini 그룹, 추천 모델 칩, 요금제 정보를 함께 표시합니다.</p>
               </article>
@@ -271,6 +329,7 @@
             <div class="col-lg-7">
               <ul class="check-list fs-5">
                 <li>한도별 카드와 리셋 시각 표시</li>
+                <li>provider별 요금제 배지 표시</li>
                 <li>60%↓ 주황, <span class="danger-text fw-semibold">40%↓ 빨강</span> 경고</li>
                 <li>트레이에 표시할 도구와 윈도우 선택</li>
                 <li>카드 접기, 모델 칩 토글, 메모 지원</li>
@@ -286,6 +345,7 @@
             <div class="col-lg-8">
               <h2 class="section-title mb-3">설치 안내</h2>
               <p class="muted fs-5 mb-2">GitHub Releases에서 universal <code>.dmg</code>를 받아 Intel과 Apple Silicon Mac에 설치할 수 있습니다. 현재 ad-hoc 서명 및 미공증 빌드이므로 다운로드한 앱의 첫 실행은 Gatekeeper가 차단합니다.</p>
+              <p class="release-note mb-3" data-release-date>최신 릴리스 정보는 페이지 로드 후 자동으로 확인합니다.</p>
               <ul class="muted fs-5 mb-0">
                 <li>시스템 설정 → 개인정보 보호 및 보안에서 아래로 스크롤한 뒤 "'HandoBar'이(가) 차단되었습니다" 옆 "그래도 열기"를 클릭하세요.</li>
                 <li>또는 터미널에서 <code>xattr -dr com.apple.quarantine /Applications/HandoBar.app</code>를 실행하세요. 앱 경로가 다르면 맞게 조정해야 합니다.</li>
@@ -293,7 +353,7 @@
               </ul>
             </div>
             <div class="col-lg-4 text-lg-end">
-              <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases"><svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>Releases 보기</a>
+              <a class="btn btn-hb-primary btn-lg px-4" href="https://github.com/umnipotent/handobar/releases" data-release-link><svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false" class="me-2" style="vertical-align:-0.125em"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>Releases 보기</a>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 > Codex · Claude Code · Antigravity 한도를 메뉴바에서 한눈에 보는 macOS 트레이 앱
 
+![release](https://img.shields.io/github/v/release/umnipotent/handobar)
 ![platform](https://img.shields.io/badge/platform-macOS-000000?logo=apple&logoColor=white)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -12,12 +13,13 @@
 
 ## 미리보기
 
-<p align="center">
-  <img src="preview.png" alt="HandoBar 패널 미리보기 — Claude Code · Codex · Antigravity 잔여 한도 카드" width="720" />
-</p>
+| 패널 | 메뉴바 |
+| --- | --- |
+| <img src="preview.png" alt="HandoBar 패널 미리보기 — Claude Code · Codex · Antigravity 잔여 한도 카드" width="720" /> | <img src="docs/assets/tray-menu-preview.png" alt="HandoBar 메뉴바 아이콘과 컨텍스트 메뉴 미리보기" width="298" /> |
 
 - 도구별 패널이 잔여 한도 카드·리셋 시각·모델 칩을 한 화면에 보여줌
-- 메뉴바 아이콘에는 선택한 항목의 잔여 %만 합성해 표시
+- 메뉴바 아이콘에는 선택한 항목의 잔여 %를 조합해 표시
+- 컨텍스트 메뉴에서 상세 보기, 즉시 갱신, 종료를 바로 실행
 
 ## 개요
 
@@ -27,15 +29,17 @@
 
 ## 표시 항목
 
-- <img src="assets/claude.svg" height="14" align="center" /> **Claude Code** — 5시간 · 주간 잔여량
-- <img src="assets/codex.svg" height="14" align="center" /> **Codex** — 5시간 세션 · 주간 잔여량
+- <img src="assets/claude.svg" height="14" align="center" /> **Claude Code** — 5시간 · 주간 잔여량 + 요금제
+- <img src="assets/codex.svg" height="14" align="center" /> **Codex** — 5시간 세션 · 주간 잔여량 + 요금제
 - <img src="assets/antigravity.svg" height="14" align="center" /> **Antigravity** — Gemini · Not-Gemini(Claude·OSS 등) 그룹별 잔여량 + 추천 모델 칩 + 요금제
 
 ## 기능
 
 - 한도별 카드 + 리셋까지 남은 시간 표시
+- provider별 요금제 배지 표시
 - 잔여량 색상 경고: 60% 이하 주황 · 40% 이하 빨강 + 경고 배너
-- 트레이 아이콘에 원하는 항목의 잔여 %만 선택 표시
+- 트레이 아이콘에 원하는 항목의 잔여 % 선택 표시
+- 메뉴바 컨텍스트 메뉴에서 상세 보기·바로 갱신·종료 실행
 - 카드 접기/펼치기 · 모델 칩 보이기/숨기기 · 자유 메모
 
 ## 데이터 출처

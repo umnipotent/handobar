@@ -58,7 +58,7 @@ chore: 빌드 산출물 .gitignore 처리
 본문이 있는 예시:
 
 ```
-feat: 버전 범프 워크플로를 version-bump 스킬로 분리
+feat: 버전 범프 워크플로를 hb-version 스킬로 분리
 
 - 다섯 파일 버전 동기화 스크립트(bump_version.py) 번들
 - AGENTS.md에 스킬화 기준·작성 원칙·현재 스킬 목록 기술
@@ -74,5 +74,5 @@ feat: 버전 범프 워크플로를 version-bump 스킬로 분리
 
 ## 연관 스킬
 
-- [`hb-version`](../version-bump/SKILL.md): 버전업 시 `release: x.y.z 버전업 및 릴리스` 커밋을 만드는데,
+- [`hb-version`](../hb-version/SKILL.md): 버전업 시 `release: x.y.z 버전업 및 릴리스` 커밋을 만드는데,
   그 메시지도 이 컨벤션을 따른다.
