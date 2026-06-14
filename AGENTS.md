@@ -160,6 +160,16 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 > 엔드포인트·인증·소스·폴링/rate limit·경고 정책·provider 추가 절차의 **단일 출처는
 > [`hb-usage` 스킬](.agents/skills/usage/SKILL.md)** 이다.
 
+### 개발 시 깨달은 내용 (Lessons Learned)
+
+Antigravity 사용량 연동(feature-agy 브랜치 작업) 과정에서 도출된 핵심 경험적 교훈은 다음과 같다:
+
+1. **User-Agent 기반 403 인증 차단**: Google API(`fetchAvailableModels`) 호출 시, Bearer 토큰이 올바르더라도 `User-Agent` 헤더 규격을 지키지 않으면 `403 Forbidden`을 반환한다. 적절한 플랫폼 UA 값을 반드시 전송해야 한다.
+2. **Protobuf 바이트 파싱 최적화**: SQLite에서 읽은 2진 데이터를 직접 파싱(varint 및 wire-type 루프)해 sentinel 매칭 및 access_token을 추출함으로써, 대형 의존성인 `prost`를 도입하지 않고 바이너리 경량화를 달성했다.
+3. **잔여 Fraction 생략 = 0%**: `remainingFraction` 필드가 누락되어 있는 모델은 쿼터가 소진(0%)된 상태이므로, 이를 `unwrap_or(0.0)` 처리해 실시간 고갈 경고가 작동하도록 보정해야 한다.
+4. **대표 모델 랭킹 산출**: 단순 정렬 시 잘못된 모델이 대표로 표시된다. API의 `defaultAgentModelId` 및 `agentModelSorts` 우선순위 구조를 해석하여 대표 모델을 선정함으로써 UX의 정확성을 확보했다.
+5. **OCP 디자인 패턴**: 신규 모델 칩 등 개별 프로바이더만의 데이터를 UI에 표현할 때, 전역 컴포넌트를 직접 오염시키는 대신 `UsageSnapshot` 및 `UsageProvider` 인터페이스의 옵션 옵션들(`chips`, `showModelBadges` 등)을 추가하여 사이드 이펙트 없이 확장했다.
+
 ### macOS 코드 서명 (키체인 "항상 허용" 유지)
 
 사용량 토큰을 키체인에서 읽을 때 macOS가 허용 프롬프트를 띄운다. **"항상 허용"은 앱의 고정 서명 신원에

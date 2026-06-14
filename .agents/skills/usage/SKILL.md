@@ -132,6 +132,26 @@ src/features/claudeUsage/provider.ts · codexUsage/provider.ts · antigravityUsa
 - **[format.test.ts](file:///Users/morgan/Development/handobar/src/features/usage/format.test.ts)**: `formatReset`(가상 타이머)·`formatKstIsoWithoutTimezone`(KST 보정).
 - **[storage.test.ts](file:///Users/morgan/Development/handobar/src/features/usage/storage.test.ts)**: `clampIntervalMin` 범위 보정, provider별 키 격리(`LocalStorageMock`).
 
+## 개발 시 깨달은 내용 (Lessons Learned)
+
+Antigravity 사용량 연동 기능을 개발하며 얻은 기술적 경험과 교훈을 다음과 같이 정리한다.
+
+1. **User-Agent 헤더 필수 요구 (403 Forbidden)**
+   - Google `fetchAvailableModels` API는 유효한 OAuth 토큰을 제공하더라도 헤더에 `User-Agent: antigravity/<ver> <os>/<arch>`와 같이 플랫폼 지정 포맷이 유효하게 들어있지 않으면 **403 Forbidden** 응답을 리턴한다. API 호출 시 필수적으로 User-Agent 헤더 구조를 검사하고 탑재해야 한다.
+2. **SQLite 및 Protobuf 바이너리 직접 파싱**
+   - OS에 로컬로 깔려있는 VSCode globalState 데이터베이스(`state.vscdb`)에서 OAuth 토큰을 추출하기 위해 SQL 쿼리를 수행한다.
+   - 이때 저장된 토큰 정보는 Protobuf로 인코딩되어 저장되며, 다중 상태 정보(`oauthTokenInfoSentinelKey` 등)가 필드로 포함된다.
+   - 무거운 외부 Protobuf 라이브러리(`prost` 등)를 의존성에 올리기보단 SQLite DB 추출 후 direct byte parsing(varint + scan_fields) 형태로 수동 파서를 구현하는 것이 빌드 크기와 이식성 측면에서 우수했다.
+3. **잔여 쿼터의 부재와 0% 매핑 규칙**
+   - Google PA API 응답의 `quotaInfo`에는 `remainingFraction` 필드가 생략되어 있는 경우가 존재한다.
+   - 이 때 `remainingFraction`이 없다고 해서 `unknown`으로 처리하면 안 되며, 이는 **해당 쿼터가 이미 소진(0%)된 상태**를 의미한다. `unwrap_or(0.0)` 처리를 빠뜨리지 않도록 유의해야 한다.
+4. **대표 모델 선정의 중요성**
+   - 단순 알파벳 정렬로 모델을 나열하고 그 중 첫 번째를 사용량 카드 제목(예: 대표 모델)으로 고르면, 실제 사용자가 주력으로 쓰고 있는 "Gemini 3.5 Flash" 대신 엉뚱한 레거시 모델 등이 나타나는 UX 결함이 발생한다.
+   - 반드시 API 응답 내 `defaultAgentModelId` 및 `agentModelSorts`의 우선순위 rank 점수를 계산해 대표 모델을 매핑해주어야 한다.
+5. **OCP(개방-폐쇄 원칙) 유지와 확장성**
+   - 새로운 프로바이더가 추가되거나 기존의 UI에 추가적인 스펙(예: 대체 모델 추천 칩 등)을 보여줘야 할 때, 공유 패널이나 카드 구현 전체를 매번 뜯어고치면 회귀 오류(Regression)가 유발된다.
+   - `UsageSnapshot`에는 `Option` 필드로만 고유 정보(예: `five_hour_chips`)를 싣고, 렌더링에 필요한 속성은 `UsageProvider` 디스크립터 인터페이스를 통해 필요할 때만 선택적 함수(`fiveHourChips()`, `showModelBadges` 등)로 꽂아서 사용하도록 설계하는 방식이 유지보수에 유리하다.
+
 ## 연관 스킬
 
 - [`hb-testing`](../testing/SKILL.md): Rust/Vitest 테스트 작성·실행, 캐시 상태 격리, fake timer/localStorage mock.
