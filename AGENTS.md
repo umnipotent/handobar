@@ -21,7 +21,7 @@
 
 > 현재 상태: 시스템 트레이 아이콘·메뉴(Show/Refresh/Quit)와 **Claude Code·Codex·Antigravity 잔여 사용량**
 > 표시 UI(마지막 갱신 시각 포함)가 구현됨([사용량 추적](#사용량-추적) 참고).
-> 사용량 기능은 `feature-codex` 브랜치에서 개발 중(미릴리스).
+> 사용량 기능은 `feature-agy` 브랜치에서 개발 중(미릴리스).
 
 ## 디렉터리 구조
 
@@ -137,9 +137,15 @@ provider 추가 시 기존 코드를 수정하지 않는다(OCP).
 - **Claude Code** (`get_claude_usage`): 키체인 토큰 → `GET /api/oauth/usage`, 잔여 = 100 − utilization. 429 backoff 있음.
 - **Codex** (`get_codex_usage`): `~/.codex/sessions` 최신 rollout의 `rate_limits` 스냅샷(primary=5h, secondary=주간),
   잔여 = 100 − used_percent. 네트워크·인증 없음.
+- **Antigravity** (`get_antigravity_usage`): Antigravity IDE 자체 `state.vscdb`(SQLite)의 OAuth 토큰 → 필요 시
+  Google OAuth 갱신 → `daily-cloudcode-pa.googleapis.com`의 `loadCodeAssist`/`fetchAvailableModels`(`User-Agent` 헤더
+  필수, 없으면 403). 콕핏 확장 캐시나 Gemini CLI 쿼터가 아닌 **Antigravity 자체 쿼터**다. Gemini/타사(Claude·OSS 등)
+  모델을 `apiProvider`로 그룹핑해 각 카드의 대표 모델(잔여율, `defaultAgentModelId`/`agentModelSorts` 우선순위 기반
+  선정)과 추천 모델 칩(`five_hour_chips`/`seven_day_chips`)을 표시한다. `quotaInfo`는 있는데 `remainingFraction`이
+  없으면 소진(0%)이다. 요금제 배지는 `paidTier.name`(없으면 `currentTier.name`) 기준.
 
 구조는 과한 계층화를 피하면서 기능 단위로 분리한다. 백엔드는 `src-tauri/src/usage/` 아래에서 공유
-도메인(`model.rs`)·캐시(`cache.rs`) 위에 `claude/`·`codex/` provider 모듈을 둔다. 프론트엔드는
+도메인(`model.rs`)·캐시(`cache.rs`) 위에 `claude/`·`codex/`·`antigravity/` provider 모듈을 둔다. 프론트엔드는
 `src/features/usage/` 에 공유 타입·포맷·localStorage·gateway(DIP)·상태 훅(`useUsage`)·카드·패널을 두고,
 `src/features/{claudeUsage,codexUsage}/provider.ts` 가 제목·커맨드·저장 키만 주입한다. 폴링 주기는
 프론트에서 1~10분(저장 키 provider별 분리). 응답의 `fetched_at` 은 KST `YYYY-MM-DDThh:mm:ss`(타임존 표기 제외)로
