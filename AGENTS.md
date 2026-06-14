@@ -71,37 +71,13 @@ handobar/
 
 ## 에이전트 작업 방식 (Claude × Codex MCP)
 
-Claude(Claude Code)로 이 프로젝트를 작업할 때, **실제 코드 구현(파일 작성·수정 등)은 Claude가 직접
-수행하지 않는다.** 대신 **codex MCP**(`mcp__codex-cli__codex`)를 통해 **GPT-5.5 medium fast** 모델에
-구현을 위임한다(5시간 세션 잔여 40% 이하면 GPT-5.4-mini —
-[Codex 사용량 기반 모델 선택](#codex-사용량-기반-모델-선택) 참고). **분석·계획·코드베이스 탐색은 Claude가 직접 수행한다.**
+작업 흐름, 도구 위임 규칙, Git 정책 및 안전 지침의 **단일 출처는 [`hb-agent` 스킬](.agents/skills/agent/SKILL.md)** 이다. 에이전트는 작업을 시작하거나 위임할 때 이 스킬을 필히 참고한다.
 
-- Claude의 역할: 요구사항 분석, 코드베이스 탐색·조사(파일 읽기·grep 등), 작업 계획 수립,
-  codex MCP 호출(구현 지시), 결과 검토·검증.
-- Codex(GPT-5.5 medium fast)의 역할: 실제 코드 작성·수정 등 구현 작업 수행
-  (`workspace-write`/fullAuto 샌드박스로 호출).
-- **worktree 변경 금지 지침**: codex 호출 프롬프트에는 "지시한 파일 외의 기존 worktree 변경
-  (미커밋 수정분)을 절대 건드리지 말 것 — 되돌리기·`git checkout`·`git restore`·`git stash` 금지"를
-  **상시 포함**한다. codex가 범위 밖 변경을 발견하면 그대로 두고 보고만 하게 한다.
-  (배경: codex가 미커밋 변경을 "범위 밖 실수"로 오인해 임의 revert, 작업분이 유실된 사례가 있음.)
+- **Claude × Codex MCP 위임 구조**: 실제 구현(파일 수정 등)은 codex MCP에 위임하고 분석·계획은 Claude가 직접 담당한다.
+- **Codex 사용량 기반 모델 선택**: 5시간 세션 잔여 40% 초과 시 GPT-5.5 medium fast를 사용하고, 40% 이하면 GPT-5.4-mini를 사용한다.
+- **Worktree 변경 금지 지침**: codex 호출 프롬프트에는 기존 worktree 변경 사항을 건드리지 않도록 하는 지침을 상시 포함한다.
+- **Git 작업 정책**: 커밋·태그·브랜칭은 사용자가 직접 터미널에서 진행한다. 에이전트는 이 명령을 실행하거나 제안하지 않는다.
 
-### Codex 사용량 기반 모델 선택
-
-codex MCP로 구현을 위임하기 전에 **Codex 잔여 사용량**을 확인한다. `~/.codex/sessions` 최신
-rollout(JSONL)의 마지막 `rate_limits` 스냅샷에서 읽으며(잔여 = 100 − `used_percent`,
-primary=5시간 세션 / secondary=주간), [사용량 추적](#사용량-추적)의 Codex provider와 같은 소스다.
-
-- **5시간 세션(primary) 잔여가 40% 초과**: 기본 모델 **GPT-5.5 medium fast** 를 사용한다.
-- **5시간 세션(primary) 잔여가 40% 이하**: **GPT-5.5를 쓰지 않고 GPT-5.4-mini** 를
-  사용해 한도를 아낀다.
-
-### Git 작업 정책
-
-- **커밋·태그·브랜치 생성 등 Git 형상 관리 작업은 유저가 직접 antigravity CLI에 요청해 진행한다.**
-- **Claude·Codex는 해당 명령을 실행하지 않을 뿐 아니라, 커밋 메시지·태그명·브랜치명 제안조차 하지
-  않는다.** 관련 요청을 받으면 작업하지 말고 antigravity CLI에 직접 요청하도록 안내한다.
-- 커밋 메시지 컨벤션([`hb-commit` 스킬](.agents/skills/commit-message/SKILL.md))은 antigravity가
-  커밋을 수행할 때 따르는 참고 기준이다.
 
 ## 개발 환경 및 실행
 
@@ -274,11 +250,13 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 | 스킬 | 출처(AGENTS.md 섹션) | 용도 | 호출 시점 |
 | --- | --- | --- | --- |
+| [`hb-agent`](.agents/skills/agent/SKILL.md) | [에이전트 작업 방식](#에이전트-작업-방식-claude--codex-mcp) | 에이전트 작업 흐름, 도구 위임 규칙, Git 정책 및 안전 지침 | 프로젝트 작업을 시작하거나 codex에 위임할 때 |
 | [`hb-tauri`](.agents/skills/tauri/SKILL.md) | [개발 환경 및 실행](#개발-환경-및-실행) | Tauri 백엔드: 실행/빌드, invoke 통신, 커맨드 추가, 권한(ACL) | Tauri/Rust 백엔드를 만질 때 |
 | [`hb-usage`](.agents/skills/usage/SKILL.md) | [사용량 추적](#사용량-추적) | provider별 잔여 사용량 fetch(소스·인증·폴링/rate limit·provider 추가) | 사용량 추적 기능을 만지거나 provider를 추가할 때 |
 | [`hb-testing`](.agents/skills/testing/SKILL.md) | [유닛 테스트](#유닛-테스트) | Rust/Vitest 테스트 작성·실행, 캐시 상태 격리, fake timer/localStorage mock | 테스트를 추가·수정하거나 flaky/racy 테스트를 다룰 때 |
 | [`hb-commit`](.agents/skills/commit-message/SKILL.md) | [커밋 컨벤션](#커밋-컨벤션) | `type: 한국어 설명` 커밋 메시지 컨벤션 (antigravity 수행 기준) | 커밋 관련 요청 시 정책·컨벤션 확인용 (Claude·Codex는 메시지 제안 금지) |
 | [`hb-version`](.agents/skills/version-bump/SKILL.md) | [버전 관리](#버전-관리) | 다섯 파일 버전 동기화 (스크립트 번들; 커밋·태그는 유저가 antigravity CLI에 요청) | 버전업/릴리스/태그할 때 |
+
 
 **연관**: `hb-usage` 는 `hb-tauri` 의 커맨드·invoke·ACL·코드 서명 패턴 위에 올라간다.
 `hb-testing` 은 `hb-usage` 의 캐시·provider 테스트 정책을 구체화한다.
