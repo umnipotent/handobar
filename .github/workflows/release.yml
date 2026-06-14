@@ -14,15 +14,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
           cache: 'pnpm'
@@ -30,47 +30,26 @@ jobs:
       - name: Install Rust targets
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
-      - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Tauri release
-        run: pnpm tauri build --target universal-apple-darwin -c '{"bundle":{"macOS":{"signingIdentity":null}}}'
+      - name: Build and publish Tauri release
+        uses: tauri-apps/tauri-action@v0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: '-'
-
-      - name: Apply DMG icon
-        run: pnpm bundle:dmg-icon
-
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          cat > release-notes.md <<'EOF'
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Handobar ${{ github.ref_name }}
+          releaseBody: |
             이 빌드는 ad-hoc 서명 및 미공증 빌드이므로 다운로드한 `.dmg`의 앱은 첫 실행 시 Gatekeeper가 차단합니다.
 
             여는 방법:
-            1. 시스템 설정 → 개인정보 보호 및 보안 → 아래로 스크롤 → "'HandoBar'이(가) 차단되었습니다" 옆 "그래도 열기" 클릭
-            2. 또는 터미널에서 격리 속성 제거: `xattr -dr com.apple.quarantine /Applications/HandoBar.app` (앱 경로에 맞게 조정)
+            1. **시스템 설정 → 개인정보 보호 및 보안** → 아래로 스크롤 → "'HandoBar'이(가) 차단되었습니다" 옆 **"그래도 열기"** 클릭
+            2. 또는 터미널에서 `xattr -dr com.apple.quarantine /Applications/HandoBar.app` 입력 (앱 경로에 맞게 조정)
             3. 직접 빌드(`pnpm tauri build`)한 앱은 다운로드 앱이 아니므로 차단되지 않습니다.
 
             차단 화면에서 "휴지통으로 이동"은 누르지 마세요.
-          EOF
-
-          artifacts=(src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
-          if [[ ! -e "${artifacts[0]}" ]]; then
-            echo "No DMG artifacts found." >&2
-            exit 1
-          fi
-
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --title "Handobar $RELEASE_TAG" --notes-file release-notes.md --draft=false --prerelease=false
-            gh release upload "$RELEASE_TAG" "${artifacts[@]}" --clobber
-          else
-            gh release create "$RELEASE_TAG" "${artifacts[@]}" --title "Handobar $RELEASE_TAG" --notes-file release-notes.md --draft=false --prerelease=false --target "$GITHUB_SHA"
-          fi
+          releaseDraft: false
+          prerelease: false
+          args: '--target universal-apple-darwin -c ''{"bundle":{"macOS":{"signingIdentity":null}}}'''

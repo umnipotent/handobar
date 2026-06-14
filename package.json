@@ -8,7 +8,6 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "bundle:dmg-icon": "scripts/apply-dmg-icon.sh",
     "test": "vitest run",
     "setup:signing": "bash scripts/setup-macos-signing.sh",
     "sign:dev": "codesign --force --identifier dev.qus0in.handobar --sign handobar-dev src-tauri/target/debug/handobar"
