@@ -26,7 +26,7 @@ fn set_tray_display(app: tauri::AppHandle, png: Option<Vec<u8>>) -> Result<(), S
 }
 
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             usage::get_antigravity_usage,
@@ -92,6 +92,16 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    // Cmd+Q / Dock의 "종료"(code: None)는 트레이를 살리기 위해 막고,
+    // 트레이 메뉴의 "종료"(app.exit(0), code: Some)만 실제 종료를 허용한다.
+    app.run(|_app_handle, event| {
+        if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
+            if code.is_none() {
+                api.prevent_exit();
+            }
+        }
+    });
 }
