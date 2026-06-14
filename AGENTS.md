@@ -76,7 +76,7 @@ handobar/
 - **Claude × Codex MCP 위임 구조**: 실제 구현(파일 수정 등)은 codex MCP에 위임하고 분석·계획은 Claude가 직접 담당한다.
 - **Codex 사용량 기반 모델 선택**: 5시간 세션 잔여 40% 초과 시 GPT-5.5 medium fast를 사용하고, 40% 이하면 GPT-5.4-mini를 사용한다.
 - **Worktree 변경 금지 지침**: codex 호출 프롬프트에는 기존 worktree 변경 사항을 건드리지 않도록 하는 지침을 상시 포함한다.
-- **Git 작업 정책**: 커밋·태그·브랜칭은 사용자가 직접 터미널에서 진행한다. 에이전트는 이 명령을 실행하거나 제안하지 않는다.
+- **Git 작업 정책**: 커밋·태그·브랜칭 등의 Git 형상 관리 작업은 Antigravity CLI가 직접 결정하고 실행한다. (Claude·Codex는 이를 실행하거나 제안하지 않으며 Antigravity CLI에 위임한다.)
 
 
 ## 개발 환경 및 실행
@@ -220,10 +220,7 @@ feat: 시스템 트레이 아이콘과 사용량 팝오버 윈도우 추가
 
 1. 다섯 파일(`package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `AGENTS.md`)의 버전을 동일하게 맞춘다.
    → `python3 .agents/skills/version-bump/scripts/bump_version.py <x.y.z>`
-2. `chore: x.y.z 버전업` 커밋은 **유저가 직접 antigravity CLI에 요청**한다
-   (메시지 컨벤션은 [`hb-commit` 스킬](#스킬skills), [Git 작업 정책](#git-작업-정책) 참고).
-3. 해당 커밋에 동일 버전의 Git 태그(`git tag -a x.y.z -m "x.y.z"`)를 다는 것도
-   유저가 직접 antigravity CLI에 요청한다.
+2. 버전업 이후 커밋 및 Git 태그(`git tag -a x.y.z -m "x.y.z"`) 생성 작업은 Antigravity CLI가 직접 결정하고 실행한다. (메시지 컨벤션은 [`hb-commit` 스킬](#스킬skills)을 따른다.)
 
 > 태그명은 `v` 접두사 없이 **순수 버전 번호**(예: `0.0.1`)를 사용한다.
 > 현재 버전: **`0.2.0`** (스킬 인프라 정비: hb-commit·hb-version, 심볼릭 링크 문서화).

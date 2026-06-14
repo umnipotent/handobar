@@ -1,6 +1,6 @@
 ---
 name: hb-commit
-description: Commit message convention for the handobar project — an English Conventional-Commits category followed by a Korean description (`<type>: <한국어 설명>`), applied by the user directly via the antigravity CLI. Consult this skill whenever commits, tags, or branches come up, you are asked to "커밋"/"commit"/"커밋 메시지 작성", or a commit type (feat/fix/docs/...) is being discussed — Claude/Codex must NOT execute git commits/tags/branches nor even propose messages or names; redirect the user to request antigravity directly.
+description: Commit message convention for the handobar project — an English Conventional-Commits category followed by a Korean description (`<type>: <한국어 설명>`), decided and applied directly by the Antigravity CLI. Consult this skill whenever commits, tags, or branches come up, you are asked to "커밋"/"commit"/"커밋 메시지 작성", or a commit type (feat/fix/docs/...) is being discussed — Claude/Codex must delegate all git operations to the Antigravity CLI.
 ---
 
 # Commit Message (handobar 커밋 컨벤션)
@@ -9,10 +9,9 @@ handobar는 일반적인 [Conventional Commits](https://www.conventionalcommits.
 **영문 카테고리(type)** 와 **한국어 설명**을 조합한다. 영문 type은 도구·기계가 분류하기 좋고,
 한국어 설명은 의도를 가장 정확히 전달하기 때문이다.
 
-> **적용 주체**: 커밋·태그·브랜치 작업(메시지 작성 포함)은 **유저가 직접 antigravity CLI에 요청**해
-> 진행한다. **Claude·Codex는 해당 명령을 실행하지 않을 뿐 아니라 커밋 메시지 제안조차 하지 않으며**,
-> 관련 요청을 받으면 antigravity CLI에 직접 요청하도록 안내한다. 아래 절차는 antigravity가 따르는
-> 컨벤션의 단일 출처다.
+> **적용 주체**: 커밋·태그·브랜치 작업(메시지 작성 포함)은 **Antigravity CLI가 직접 결정하고 실행**한다.
+> **Claude·Codex는 해당 명령을 실행하지 않을 뿐 아니라 커밋 메시지 제안조차 하지 않으며**, 모든 Git 형상 관리 작업을 Antigravity CLI에 일임한다.
+> 아래 절차는 Antigravity CLI가 커밋을 생성할 때 따르는 컨벤션의 단일 출처다.
 
 ## 형식
 

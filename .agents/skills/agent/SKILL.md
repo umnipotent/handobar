@@ -34,10 +34,9 @@ Codex를 호출할 때 전달하는 프롬프트에는 다음 지침을 **상시
 
 ## 4. Git 작업 정책
 
-- **수행 주체**: 커밋 생성, 브랜치 생성, Git 태그 생성 등 모든 형상 관리 작업은 **사용자가 직접 antigravity CLI(또는 터미널)에 요청**하여 진행한다.
-- **제안 제한**: Claude Code 및 Codex는 형상 관리 명령을 직접 실행할 수 없으며, **커밋 메시지, 태그명, 브랜치명을 스스로 제안해서도 안 된다.**
-- **안내**: 사용자가 Git 작업을 요청하면 직접 터미널(antigravity CLI)을 통해 진행하도록 올바르게 안내한다.
-- **참고 기준**: antigravity가 커밋을 수행할 때는 [`hb-commit`](../commit-message/SKILL.md) 스킬의 컨벤션을 준수한다.
+- **수행 주체**: 커밋 생성, 브랜치 생성, Git 태그 생성 등 모든 형상 관리 작업은 **Antigravity CLI가 직접 결정하고 실행한다.**
+- **도구 위임**: Claude Code 및 Codex 등 하위/외부 도구들은 Git 형상 관리 명령을 직접 실행할 수 없으며, 커밋 메시지, 태그명, 브랜치명을 스스로 제안해서도 안 된다. 이들은 모든 Git 작업을 Antigravity CLI에 일임해야 한다.
+- **참고 기준**: Antigravity CLI가 커밋을 수행할 때는 [`hb-commit`](../commit-message/SKILL.md) 스킬의 컨벤션을 준수한다.
 
 ## 5. 윈도우-불가지(Window-Agnostic) 아키텍처 규칙
 
