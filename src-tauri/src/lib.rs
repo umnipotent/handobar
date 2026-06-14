@@ -26,7 +26,7 @@ fn set_tray_display(app: tauri::AppHandle, png: Option<Vec<u8>>) -> Result<(), S
 }
 
 pub fn run() {
-    let app = tauri::Builder::default()
+    tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             usage::get_antigravity_usage,
@@ -90,18 +90,14 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // macOS: Accessory 정책으로 Dock 아이콘/Cmd+Tab에서 빠지는 순수 트레이 상주 앱이 된다.
+            // → Dock "종료"·표준 Cmd+Q 같은 종료 수단 자체가 사라져 트레이가 유지된다.
+            //   (완전 종료는 트레이 메뉴 "종료"의 app.exit(0)으로만 가능.)
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
-    // Cmd+Q / Dock의 "종료"(code: None)는 트레이를 살리기 위해 막고,
-    // 트레이 메뉴의 "종료"(app.exit(0), code: Some)만 실제 종료를 허용한다.
-    app.run(|_app_handle, event| {
-        if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
-            if code.is_none() {
-                api.prevent_exit();
-            }
-        }
-    });
 }

@@ -38,15 +38,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build and publish Tauri release
-        uses: tauri-apps/tauri-action@v0
+      - name: Build Tauri release
+        run: pnpm tauri build --target universal-apple-darwin -c '{"bundle":{"macOS":{"signingIdentity":null}}}'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: '-'
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Handobar ${{ github.ref_name }}
-          releaseBody: |
+
+      - name: Apply DMG icon
+        run: pnpm bundle:dmg-icon
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cat > release-notes.md <<'EOF'
             이 빌드는 ad-hoc 서명 및 미공증 빌드이므로 다운로드한 `.dmg`의 앱은 첫 실행 시 Gatekeeper가 차단합니다.
 
             여는 방법:
@@ -55,6 +60,17 @@ jobs:
             3. 직접 빌드(`pnpm tauri build`)한 앱은 다운로드 앱이 아니므로 차단되지 않습니다.
 
             차단 화면에서 "휴지통으로 이동"은 누르지 마세요.
-          releaseDraft: false
-          prerelease: false
-          args: '--target universal-apple-darwin -c ''{"bundle":{"macOS":{"signingIdentity":null}}}'''
+          EOF
+
+          artifacts=(src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          if [[ ! -e "${artifacts[0]}" ]]; then
+            echo "No DMG artifacts found." >&2
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "Handobar $RELEASE_TAG" --notes-file release-notes.md --draft=false --prerelease=false
+            gh release upload "$RELEASE_TAG" "${artifacts[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${artifacts[@]}" --title "Handobar $RELEASE_TAG" --notes-file release-notes.md --draft=false --prerelease=false --target "$GITHUB_SHA"
+          fi

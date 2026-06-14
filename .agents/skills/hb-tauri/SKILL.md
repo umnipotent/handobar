@@ -46,19 +46,20 @@ pnpm test             # 프론트엔드 React/TS 유닛 테스트 실행 (Vitest
 
 ## 윈도우 / 트레이 생명주기 (백그라운드 상주)
 
-handobar는 **트레이 상주** 유틸리티이므로, 윈도우를 닫거나 Cmd+Q를 눌러도 앱이 죽지 않고
-우측 상단 트레이 아이콘으로 상주해야 한다. 이 동작은 `lib.rs`에서 두 단계로 보장한다.
+handobar는 **순수 트레이(메뉴바) 상주** 유틸리티다. 윈도우를 닫아도 죽지 않고, Dock·Cmd+Q로도
+끌 수 없으며, 완전 종료는 트레이 메뉴 "종료"로만 가능해야 한다. `lib.rs`에서 두 가지로 보장한다.
 
 1. **윈도우 닫기(빨간 버튼) → 숨김**: `on_window_event`의 `CloseRequested`에서 `window.hide()` +
    `api.prevent_close()`로 윈도우만 숨기고 프로세스는 유지한다.
-2. **앱 종료(Cmd+Q / Dock 종료) → 차단, 트레이 유지**: 빌더를 `.run(...)`이 아니라 `.build(...)`로
-   만든 뒤 `app.run(|_, event| ...)`에서 `RunEvent::ExitRequested`를 가로채 `api.prevent_exit()`로
-   막는다. 이때 **`code`로 의도된 종료와 그렇지 않은 종료를 구분**한다.
-   - `code.is_none()` (Cmd+Q, Dock "종료", 마지막 윈도우 닫힘 등 시스템 발 종료) → `prevent_exit()`로 차단.
-   - `code.is_some()` (트레이 메뉴 "종료"가 호출한 `app.exit(0)`) → 그대로 통과시켜 **실제 종료**.
+2. **macOS Accessory 정책 → Dock/Cmd+Q 종료 수단 제거**: `setup`에서
+   `#[cfg(target_os = "macos")] app.set_activation_policy(tauri::ActivationPolicy::Accessory)`를
+   호출한다. 그러면 Dock 아이콘·Cmd+Tab 목록에서 빠지는 메뉴바 전용 에이전트 앱이 되어, Dock "종료"나
+   표준 Cmd+Q 같은 종료 경로 자체가 사라진다. 완전 종료는 트레이 메뉴 "종료"의 `app.exit(0)`로만 가능하다.
 
-> 즉, 앱을 완전히 끄는 **유일한 경로는 트레이 컨텍스트 메뉴의 "종료"**(`app.exit(0)`)다. 다른 모든
-> 종료 시도는 트레이 상주를 위해 무시된다. 트레이 생명주기 동작을 바꿀 때는 이 구분을 깨지 않도록 주의한다.
+> **왜 `RunEvent::ExitRequested` + `prevent_exit()`로는 안 되나**: 현재 tao(0.35.x)는 macOS
+> `applicationShouldTerminate:`를 구현하지 않는다. 그래서 Dock "종료"·Cmd+Q 같은 표준 종료는
+> `ExitRequested`를 **거치지 않고** 곧바로 프로세스를 죽이며, `prevent_exit()`는 호출조차 되지 않는다.
+> macOS에서 트레이 상주를 실제로 보장하는 정석은 **Accessory 정책**이다. 생명주기 동작을 바꿀 때 이 점을 유의한다.
 
 ## 권한 (ACL / capabilities)
 
